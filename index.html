@@ -1,0 +1,653 @@
+<!doctype html>
+<!--[if lt IE 7]>
+<html class="no-js lt-ie9 lt-ie8 lt-ie7"> <![endif]-->
+<!--[if IE 7]>
+<html class="no-js lt-ie9 lt-ie8"> <![endif]-->
+<!--[if IE 8]>
+<html class="no-js lt-ie9"> <![endif]-->
+<!--[if gt IE 8]><!-->
+<html class="no-js"> <!--<![endif]-->
+<head>
+    <meta charset="utf-8">
+    <title>Longboard Monitor</title>
+    <meta name="description" content="">
+    <meta name="viewport" content="width=device-width">
+    <link rel="stylesheet" href="pageResource?page=custompage_longboard&location=style/animate.css" />
+    <link rel="stylesheet" href="pageResource?page=custompage_longboard&location=style/bootstrap.min.css">
+	<link rel="stylesheet" href="pageResource?page=custompage_longboard&location=style/main.css">
+	<link rel="stylesheet" href="pageResource?page=custompage_longboard&location=style/style.css">
+	<link rel="stylesheet" href="pageResource?page=custompage_longboard&location=style/toggle.css">
+ 
+	<script type="text/javascript" src="https://www.google.com/jsapi"></script>
+	<script type="text/javascript" src="https://www.google.com/uds/?file=visualization&amp;v=1&amp;hl=fr&amp;packages=corechart&amp;async=2"></script>
+	<link type="text/css" href="https://www.google.com/uds/api/visualization/1.0/ff67c3772da186a412ae3231c32409e9/ui+fr.css" rel="stylesheet">
+	<script type="text/javascript" src="https://www.google.com/uds/api/visualization/1.0/ff67c3772da186a412ae3231c32409e9/format+fr,default+fr,ui+fr,corechart+fr.I.js"></script>
+	<link href="https://ajax.googleapis.com/ajax/static/modules/gviz/1.0/core/tooltip.css" rel="stylesheet" type="text/css">
+		
+		
+</head>
+<body ng-app="longboardmonitor">
+
+
+<div class="bs-component"  ng-controller="MainController as mainctrl">
+
+	<center>
+	<table><tr><td><h1>Long board</h1></td><td rowspan="2"><img src="pageResource?page=custompage_longboard&location=img/longboard.jpg" width="150" heigth="150" /></td></tr>
+		<tr><td style="font-size:0.8em"> <a href="" ng-click="mainctrl.showhistory( ! mainctrl.isshowhistory )">V2.2</a></td></tr>
+		<tr><td>
+		<div id="showHistory" ng-show="mainctrl.isshowhistory" style="border-width:2px;border-style:ridge;border-color:blue">
+		1.0 First version<br>
+		1.1 First publication<br>
+		1.2 Add Timer in the Case History<br>
+		1.3 Add the complete Java environement in the Perforance mesure tool<br>
+		1.4 Fix bugs and add a checkox in Performance measure to run the Process test<br>
+		1.5 Add checkbox on each test, and allow to start the test for a number of case in parameters<br>
+		2.0 New control Monitor and improve the Case History
+		2.1 Bonita V7 integration
+		2.2 Run in a Living application
+		</td></tr>
+		</div>
+	</table>
+	</center>
+</div>
+
+	<!-- process monitor -->
+	<div class="col-lg-12">
+
+		<div class="bs-component" ng-mouseenter="hover('apps')" ng-mouseleave="hover('apps')"  ng-controller="MonitorProcessController as moniprocessesctrl">
+			<legend class="text-primary"><span class="glyphicon glyphicon-th"></span>Monitor process</legend>
+			
+			<div class="panel panel-primary">
+				<div class="panel-body">
+					<div class="explanation">
+					Display all processes
+					</div>
+					<button id="collectProcessesbtn" ng-click="moniprocessesctrl.refresh()" class="btn btn-info btn-xs" title="Show the processes and cases"/>Show Processes/cases</button><p>						
+					
+					<div id="collectProcessesWait" style="background-color:green;color: #FFFFFF;">Please wait, collect in progress</div>
+			
+					<div class="alert alert-danger" role="alert" ng-show="moniprocessesctrl.errormessage.length > 0">{{moniprocessesctrl.errormessage}}</div>
+					
+					<a href="" ng-click="moniprocessesctrl.showlegend( ! moniprocessesctrl.isshowlegend )">Legend</a>
+					<div id="showLegend" ng-show="moniprocessesctrl.isshowlegend" style="border-width:2px;border-style:ridge;border-color:blue">
+						<li>Details: show or hide the detail activity per activity<br>
+						<li>Name: Process name
+						<li>Version: Process version
+						<li>State: State of process
+						<li>Deployed Date: date of deployment
+						<li>Cases: number open cases
+						<li>Analysis: result of the analysis. Take into account the different level "warmoverflowtasks", "warnearbytasks", "warmtask"<br> 
+						   For exemple, give as DESCRIPTION in the process warmoverflowtasks:45;warnearbytasks=22;warmtask=3000
+						<li>Tasks: number of open tasks (one case may have multiple tasks)
+						<li>Overflow: number of <b>human tasks</b> who exceded the time allowed to work on<br>
+						            Example, in the task, design show the task must be managed in 5 hours, and this is the number of task waiting more than 5 hours
+						<li>Near: number of <b>human tasks</b> which will be overflow in the next hour<b>
+					</div>
+					<h2>Processes</h2>
+						Overflow: <input  type="text" ng-model="moniprocessesctrl.defaultWarningNbOverflowTasks" style="width:40px;" />
+						Near: <input  type="text" ng-model="moniprocessesctrl.defaultWarningNearbyTasks" style="width:40px;"/>
+						Task: <input  type="text" ng-model="moniprocessesctrl.defaultWarningNbTasks" style="width:40px;"/>
+						ActiviyPastInMn: <input  type="text" ng-model="moniprocessesctrl.activityPeriodInMn" style="width:40px;"/>
+						Max Items: <input  type="text" ng-model="moniprocessesctrl.defaultmaxitems" style="width:80px;"/>
+						Study past activity: <input  type="checkbox" ng-model="moniprocessesctrl.studypastactivities" style="width:80px;"/>
+						
+						<br>
+						<!-- <table class="table table-striped table-hover table-condensed" style="background-color:#C49E71"> -->
+						<table class="table table-hover table-condensed" >
+						<tr style="background-color:#007DB3">
+							<th>Details</th>
+							<th>Name</th>
+							<th>Version</th>
+							<th>State</th>
+							<th>Deployed date</th>
+							<th>Cases</th>							
+							<th>Analysis</th>
+							<th>Tasks</th>
+							<th>Overflow</th>
+							<th>Near</th>
+							<th>Failed</th>
+							<th>Executing</th>
+							<th>Activity</th>							
+							<th>Analysis in (ms)</th>
+						</tr>
+						
+						<tbody ng-repeat="oneprocess in moniprocessesctrl.processes track by $index">
+							<tr style="background-color:#C49E71">
+								<td><input type="checkbox" ng-model="oneprocess.showdetails" />Details</td>
+								<td>{{oneprocess.name}}</td>
+								<td>{{oneprocess.version}}</td>
+								<td>{{oneprocess.state}}</td>
+								<td>{{oneprocess.deployedDate}}</td>
+								<td>{{oneprocess.nbCases}}</td>
+								<td>
+									<span class="label label-warning" ng-show="oneprocess.shownearbywarning">Warning</span>&nbsp;
+									<span class="label label-danger" ng-show="oneprocess.showoverflowwarning">Overflow</span>&nbsp;
+									<span class="label label-danger" ng-show="oneprocess.showtaskswarning">Tasks</span>&nbsp;
+									<span class="label label-danger" ng-show="oneprocess.showtasksfailed">Failed</span>&nbsp;
+									<span class="label label-danger" ng-show="oneprocess.showerrormaxitems">Max Item</span>&nbsp;
+									
+									
+									<!-- {{oneprocess.analysisStatus}} -->
+								</td>
+								<td>{{oneprocess.nbTasks}}</td>
+								<td>{{oneprocess.nbOverflowTasks}}</td>
+								<td>{{oneprocess.nbNearbyTasks}}</td>
+								<td>{{oneprocess.nbFailedTasks}}</td>
+								<td>{{oneprocess.nbExecutingTasks}}</td>
+								<td>{{oneprocess.nbActivitiesPeriod}}</td>
+								<td>{{oneprocess.timeAnalysisMs}}</td>
+							</tr>
+								<tr style="background-color:#99D9EA" ng-show="oneprocess.showdetails">
+									<td></td>
+									<td><i>ActivityName</i></td>								
+									<td></td> <td></td> <td></td> <td></td> <td></td>									
+									<td><i>Tasks</i></td>
+									<td><i>Overflow</i></td>
+									<td><i>Near</i></td>
+									<td><i>Failed</i></td>
+									<td><i>Executing</i></td>
+									<td><i>Activity</i></td>
+									<td><i>TimeAnalysis</i></td>
+									
+								</tr>
+								<tr ng-repeat="activity in oneprocess.activities track by $index" ng-show="oneprocess.showdetails">
+									<td></td>
+									<td>{{activity.name}}</td>
+									<td></td> <td></td> <td></td> <td></td> 
+									<td>
+										<span class="label label-warning" ng-show="activity.shownearbywarning">Warning {{activity.nbNearbyTasks}}</span>&nbsp;
+										<span class="label label-danger" ng-show="activity.showoverflowwarning">Overflow {{activity.nbOverflowTasks}} </span>&nbsp;
+										<span class="label label-danger" ng-show="activity.showtaskswarning">Tasks {{activity.nbTasks}} </span>&nbsp;
+										<span class="label label-danger" ng-show="activity.showtasksfailed">Failed</span>&nbsp;
+										<span class="label label-danger" ng-show="activity.showerrormaxitems">Max Item</span>&nbsp;
+
+									</td>
+									<!-- <td>{{activity.id}}</td> -->
+									<td>{{activity.nbTasks}}</td>							
+									<td>{{activity.nbOverflowTasks}}
+									  
+									</td>							
+									<td>{{activity.nbNearbyTasks}}</td>							
+									<td>{{activity.nbFailedTasks}}</td>							
+									<td>{{activity.nbExecutingTasks}}</td>							
+									<td>{{activity.nbActivitiesPeriod}}</td>							
+									<td>{{activity.timeAnalysisMs}}</td>
+									
+								</tr>
+								
+								<tr ng-repeat="graph in oneprocess.processgraph track by $index" ng-show="oneprocess.showdetails">
+									<td></td>
+									<td colspan="4">
+
+										<div google-chart chart="graph.createcase" style="height: 200px; width: 100%; position: relative; "></div>
+									</td>
+								</tr>
+								
+								
+						</tbody>
+					</table>
+					{{moniprocessesctrl.status}}
+				
+				</div>
+			</div>
+		</div>
+	</div>
+
+
+	<div>
+		<div class="bs-component"  ng-controller="TimeTrackerController as timetrackerctrl">
+		<div class="col-lg-12">
+			<legend class="text-primary"><span class="glyphicon glyphicon-th"></span>Connector</legend>
+			<div class="panel panel-primary">
+				<div class="explanation">
+				Performance information on connector.
+				</div>
+				
+				<div class="alert alert-danger" role="alert" ng-show="timetrackerctrl.errormessage.length > 0">{{timetrackerctrl.errormessage}}</div>
+				<!-- <span style="color:red">{{timetrackerctrl.errormessage}}</span>-->
+				
+				<div style="text-align:right"><a href=""  ng-click="timetrackerctrl.showexplanation( ! timetrackerctrl.isshowexplanation )"> <img src="pageResource?page=custompage_longboard&location=img/wizard.gif" />How to Install the service ?</a></div>
+				<div id="showExplanation" ng-show="timetrackerctrl.isshowexplanation" class="explanation" style="border-width:2px;border-style:ridge;border-color:red">
+					<center><button id="hideexpl" ng-click="timetrackerctrl.showexplanation( false )" class="btn btn-info btn-xs">Hide</button></center><p>
+					To run the Time Tracker, you have to follow this procedure:
+					<h2>V6.x</h2>
+					<li>MOVE the TimeTracker service V2 (found with this Custom page on &lt;BONITA_HOME&gt;client/tenants/&lt;TENANTID&gt;/work/pages/custompage_longboard/lib/TimeTrackerV2.jar File under &lt;TOMCAT&gt;/webapps/bonita/WEB-INF/lib
+					<li>change the service definition on &lt;BONITAHOME&gt;/server/tenants/&lt;TENANTID&gt;/conf/services : <br>
+							&lt;bean id="timeTracker" class="org.bonitasoft.engine.tracking.TimeTrackerV2"&gt;
+					<li> restart the Bonita application
+					<h2>V7.x</h2>
+					<li>MOVE the TimeTracker service V2 (found with this Custom page on &lt;BONITA_HOME&gt;/client/tenants/&lt;TENANTID&gt;/work/pages/custompage_longboard/lib/TimeTrackerV2.jar File under &lt;TOMCAT&gt;/webapps/bonita/WEB-INF/lib
+					<li>Edit the service definition on &lt;BONITAHOME&gt;/engine-server/conf/tenants/&lt;TENANTID&gt;/bonita-tenants-custom.xml : <br>
+					and add inside the content of the bean TimeTracker found on &lt;BONITA_HOME&gt;/client/tenants/&lt;TENANTID&gt;/work/pages/custompage_longboard/timetrackerlib/cfg-bonita-time-tracker.xml
+							&lt;bean id="timeTracker" class="org.bonitasoft.engine.tracking.TimeTrackerV2"&gt;
+					<li> restart the Bonita application
+					
+				</div>
+				
+				
+				<div ng-show=" ! timetrackerctrl.isstarted()">
+					<img src="pageResource?page=custompage_longboard&location=img/stop.gif">
+					<button id="startbtn" ng-click="timetrackerctrl.runService( true )" class="btn btn-info btn-xs">Start</button>
+				</div>
+				<div ng-show="timetrackerctrl.isstarted()">
+					<img src="pageResource?page=custompage_longboard&location=img/start.gif">
+					<button id="stopbtn" ng-click="timetrackerctrl.runService( false )" class="btn btn-info btn-xs">Stop</button>
+				</div>
+				<div class="alert alert-success" role="alert">{{timetrackerctrl.msg}} {{timetrackerctrl.startedmsg}}</div>
+				
+				<div id="collectTimeTrackerwait" style="background-color:green;color: #FFFFFF;">Please wait, collect in progress</div>
+			
+				<!-- Simulation ? <input type="checkbox" ng-model="timetrackerctrl.issimulation"> &nbsp; -->
+				<button id="refreshTimeTracker" ng-click="timetrackerctrl.refresh()" class="btn btn-info btn-xs">Refresh</button>
+				
+				{{timetrackerctrl.info}}
+				<h3>All informations</h1>
+				Show all informations ? <input type="checkbox" ng-model="timetrackerctrl.showallinformations">
+				Show Detail informations ? <input type="checkbox" ng-model="timetrackerctrl.showdetaildescriptionallinformations"><p>
+				<div ng-show="timetrackerctrl.showallinformations">
+					<table class="table table-striped table-hover table-condensed" style="background-color:#C49E71">
+						<tr>
+							<th>timestamp</th>
+							<th>Name</th>
+							<th>Connector</th>
+							<th>Process</th>
+							<th>CaseId</th>							
+							<th ng-show="timetrackerctrl.showdetaildescriptionallinformations">description</th>
+							<th>duration</th>
+						</tr>
+						<tr ng-repeat="record in timetrackerctrl.allrecords track by $index">
+							<td>{{record.timestampUser}}</td>
+							<td>{{record.shortname}}</td>
+							<td>{{record.connectordefinitionname}}</td>
+							<td>{{record.processdefinitionname}} ( {{record.processdefinitionversion}} )</td>
+							<td>{{record.connectorinstanceid}}</td>
+							<td ng-show="timetrackerctrl.showdetaildescriptionallinformations">{{record.description}}</td>
+							<td>{{record.duration}}</td>
+						</tr>
+					</table>
+				</div>
+				<h3>Top 10 long running</h1>
+					Show Detail informations ? <input type="checkbox" ng-model="timetrackerctrl.showdetaildescriptiontop10"><p>
+					<table class="table table-striped table-hover table-condensed" style="background-color:#C49E71">
+						<tr>
+							<th>timestamp</th>
+							<th>Name</th>
+							<th>Connector</th>
+							<th>Process</th>
+							<th>ConnectorId</th>							
+							<th>duration</th>
+			
+						</tr>
+						<tbody ng-repeat="record in timetrackerctrl.top10informations track by $index">
+							<tr >
+								<td style="background-color:#99D9EA">{{record.timestampUser}}</td>
+								<td style="background-color:#99D9EA">{{record.shortname}}</td>
+								<td style="background-color:#99D9EA">{{record.connectordefinitionname}}</td>
+								<td style="background-color:#99D9EA">{{record.processdefinitionname}} ( {{record.processdefinitionversion}} )</td>
+								<td style="background-color:#99D9EA">{{record.connectorinstanceid}}</td>
+								<td style="background-color:#99D9EA">{{record.duration}}</td>
+							</tr>
+							<tr ng-show="timetrackerctrl.showdetaildescriptiontop10">
+								<td ></td>
+								<td colspan="6" >{{record.description}}</td>
+							</tr>
+							<tr ng-show="timetrackerctrl.showdetaildescriptiontop10">
+								<td colspan="6"></td>
+							</tr>
+						</tbody>
+				</table>
+				<h3>Range information</h1>
+				<select ng-model="timetrackerctrl.rangedisplayinhour" ng-change="timetrackerctrl.refresh()">
+					<option value="1">1 hour</option>
+					<option value="2">2 hour</option>
+					<option value="10">10 hour</option>
+					<option value="24">1 day</option>
+					<option value="48">2 day</option>
+				</select>
+				<!-- <div google-chart chart="chartRange" style="height: 300px; width: 100%; position: relative; "></div> -->
+				<!--			<div google-chart chart="chartRepartitionConnector" style="height: 200px; width: 50%; position: relative; "></div> -->
+				<!--		<div google-chart chart="chartRepartitionWork" style="height: 200px; width: 50%; position: relative; "></div> -->
+				
+				<table width="100%">
+					<tr><td colspan="2">
+						<div google-chart chart="chartRange" style="height: 300px; width: 100%; position: relative; "></div>
+					</tr><tr>
+						<td width="50%">
+							<div google-chart chart="chartRepartitionConnector" style="height: 200px; width: 100%; position: relative; "></div>
+						</td><td width="50%">
+							<div google-chart chart="chartRepartitionWork" style="height: 200px; width: 100%; position: relative; "></div>
+						</td>
+					</tr>
+				</table>
+				
+				<table class="table table-striped table-hover table-condensed" style="background-color:#C49E71">
+						<tr>
+							<th>Range</th>
+							<th>Nb Execution</th>
+							<th>Average duration (ms)</th>
+							<th>Sum duration (ms)</th>
+							<th>Maximum duration (ms)</th>
+							<th>Details</th>
+						</tr>
+						<tr ng-repeat="rangerecord in timetrackerctrl.rangeinformations track by $index">
+							<td>{{rangerecord.date}}</td>
+							<td>{{rangerecord.nbExecution}}</td>
+							<td>{{rangerecord.avgDuration}}</td>
+							<td>{{rangerecord.sumDuration}}</td>
+							<td>{{rangerecord.maxDuration}}</td>
+							<td>{{rangerecord.details}}</td>							
+						</tr>
+				</table>
+				
+				<button id="refreshTimeTracker" ng-click="timetrackerctrl.refresh()" class="btn btn-info btn-xs">Refresh</button>
+			
+			</div>
+		</div>
+				
+	</div>
+	
+	
+	
+	<div class="col-lg-5">
+		<div class="bs-component"  ng-controller="MonitoringController as monictrl">
+			<legend class="text-primary"><span class="glyphicon glyphicon-th"></span>Informations</legend>
+			<div class="panel panel-primary">
+				<div class="explanation">
+				Different informations form the system are retrieved.
+				</div>
+				<div id="collectwait" style="background-color:green;color: #FFFFFF;">Please wait, collect in progress</div>
+				<button id="collectbtn" ng-click="monictrl.refresh()" class="btn btn-info btn-xs">Collect informations</button>
+				
+				<div class="alert alert-danger" role="alert" ng-show="monictrl.errormessage.length > 0">{{monictrl.errormessage}}</div>
+				
+				<table class="table table-striped table-hover table-condensed">
+					
+					<tr> <td colspan="2" style="background-color:#C49E71">Java machine</td></tr>
+					<tr> <td>Available Processor</td><td>{{monictrl.AvailableProcessor}}</td></tr>					
+					<tr> <td>Jvm Name</td><td>{{monictrl.JvmName}}</td></tr>
+					<tr> <td>JvmSystemProperties</td><td>
+				
+					 <div ng-show="! monictrl.isshowjvmsystemproperties">
+						<button id="showbtn" ng-click="monictrl.showjvmsystemproperties( true )" class="btn btn-info btn-xs">Show</button>
+					</div>
+					 <div  ng-show="monictrl.isshowjvmsystemproperties">
+						<button id="hidebtn" ng-click="monictrl.showjvmsystemproperties( false )" class="btn btn-info btn-xs">Hide</button>
+						<textarea readonly rows="30" cols="80">{{monictrl.JvmSystemProperties}}</textarea>
+					</div>
+					</td></tr>
+					<tr> <td>JvmArgs</td><td>
+					 <div ng-show="! monictrl.isSowJvmArgs">
+						<button id="showbtn" ng-click="monictrl.showJvmArgs( true )" class="btn btn-info btn-xs">Show</button>
+					</div>
+					 <div  ng-show="monictrl.isSowJvmArgs">
+						<button id="hidebtn" ng-click="monictrl.showJvmArgs( false )" class="btn btn-info btn-xs">Hide</button>
+						<textarea readonly rows="30" cols="80">{{monictrl.JVMArgs}}</textarea>
+					</div>
+					
+					
+					
+					</td></tr>
+					<tr> <td>Jvm Vendor</td><td>{{monictrl.JvmVendor}}</td></tr>
+					<tr> <td>Jvm Version</td><td>{{monictrl.JvmVersion}}</td></tr>
+					<tr> <td>OS Name</td><td>{{monictrl.OSName}}</td></tr>
+					<tr> <td>OS Arch</td><td>{{monictrl.OSArch}}</td></tr>
+					<tr> <td>OS Version</td><td>{{monictrl.OSVersion}}</td></tr>
+			
+					<tr> <td colspan="2" style="background-color:#C49E71">Memory</td></tr>
+					<tr> <td>Free Memory</td><td>{{monictrl.JavaFreeMemory}} Mo</td></tr>
+					<tr> <td>Total Memory</td><td>{{monictrl.JavaTotalMemory}} Mo</td></tr>
+					<tr> <td>Used Memory</td><td>{{monictrl.JavaUsedMemory}} Mo</td></tr>
+					<tr> <td>Usage</td><td style="float: right;">{{monictrl.MemUsage}} Mo</td></tr>
+					<tr> <td>Free</td><td style="float: right;">{{monictrl.MemFree}} bytes</td></tr>
+					<tr> <td>Free Swap</td><td style="float: right;">{{monictrl.MemFreeSwap}} bytes</td></tr>
+					<tr> <td>Usage Percentage</td><td style="float: right;">{{monictrl.MemUsagePercentage}} %</td></tr>
+					<tr> <td>Total Physical Memory</td><td style="float: right;">{{monictrl.MemTotalPhysicalMemory}} bytes</td></tr>
+					<tr> <td>Total Swap Space</td><td style="float: right;">{{monictrl.MemTotalSwapSpace}} bytes</td></tr>
+					<tr> <td>LastGCInfo</td><td>{{monictrl.LastGCInfo}}</td></tr>
+
+					<tr> <td colspan="2" style="background-color:#C49E71">Bonita engine</td></tr>
+					<tr> <td>Number Active Transaction</td><td>{{monictrl.NumberActiveTransaction}}</td></tr>
+					<tr> <td>Process CPU Time</td><td>{{monictrl.ProcessCPUTime}} na</td></tr>
+					<tr> <td>Start Time</td><td>{{monictrl.StartTimeHuman}}</td></tr>
+					<tr> <td>Load Average Last Mn</td><td>{{monictrl.LoadAverageLastMn}}</td></tr>
+					<tr> <td>Thread Count</td><td>{{monictrl.ThreadCount}}</td></tr>
+					<tr> <td>Total Threads Cpu Time</td><td>{{monictrl.TotalThreadsCpuTime}} ms</td></tr>
+					<tr> <td>Up Time</td><td>{{monictrl.UpTime}}</td></tr>
+					<tr> <td>Commited Virtual Memory Size</td><td>{{monictrl.CommitedVirtualMemorySize}}</td></tr>					
+					<tr> <td>Scheduler Started</td><td>{{monictrl.IsSchedulerStarted}}</td></tr>		
+		
+					
+					<tr> <td colspan="2" style="background-color:#C49E71">Database</td></tr>					
+					<tr> <td>Product name</td><td>{{monictrl.DatabaseProductName}}</td></tr>
+					<tr> <td>Product version</td><td>{{monictrl.DatabaseProductVersion}}</td></tr>
+					<tr> <td>Major version</td><td>{{monictrl.DatabaseMajorVersion}}</td></tr>
+					<tr> <td>Minor version</td><td>{{monictrl.DatabaseMinorVersion}}</td></tr>
+				</table>
+			</div>
+		</div>
+	</div>
+	
+	<div class="col-lg-5">
+		<div class="bs-component" ng-controller="ServerParamController as serverparamctrl">
+			<legend class="text-primary"><span class="glyphicon glyphicon-th"></span>Main Server Parameters</legend>
+			<div class="panel panel-primary">
+				<div class="explanation">
+				Parameters on the server. All amazing parameters you look for, and you never know where they are !
+				</div>
+				
+				<div id="collectserverparamwait" style="background-color:green;color: #FFFFFF;">Please wait, collect in progress</div>
+				<button id="collectserverparambtn" ng-click="serverparamctrl.refresh()" class="btn btn-info btn-xs">Collect informations</button>
+				<div class="alert alert-danger" role="alert" ng-show="serverparamctrl.errormessage.length > 0">{{serverparamctrl.errormessage}}</div>
+			
+				<table class="table table-striped table-hover table-condensed">
+					<tr> <td colspan="2" style="background-color:#C49E71">Custom Page</td></tr>
+					<tr> <td>Debug mode : </td><td>{{serverparamctrl.CustompageDebug}}</td></tr>
+					<tr> <td colspan="2" class="explanation">Property <i>custom.page.debug</i> in Configuration file <i>&lt;BONITA_HOME&gt;/client/tenants/1/conf/console-config.properties</i> <br>and <i> &lt;BONITA_HOME&gt;/client/platform/tenant-template/conf/console-config.properties</i></td></tr>
+					
+					<tr> <td colspan="2" style="background-color:#C49E71">Search</td></tr>
+					<tr> <td>Word mode : </td><td>{{serverparamctrl.PersistencehibernateEnableWordSearch}}</td></tr>
+					<tr> <td colspan="2"class="explanation">Property <i>enableWordSearch</i> in Configuration file <i>&lt;BONITA_HOME&gt;/Server/platform/conf/services/cfg-bonita-persistence-hibernate.xml</i></td></tr>
+				</table>
+			</div>
+		</div>
+	</div>
+	
+	<div class="bs-component" ng-mouseenter="hover('apps')" ng-mouseleave="hover('apps')" ng-controller="PerformanceController as perfctrl">
+		<div class="col-lg-5" id="performancemesure">
+			<legend class="text-primary"><span class="glyphicon glyphicon-th"></span>Performance Measure</legend>
+			<div class="panel panel-primary">
+			  <div class="explanation">
+				This page mesure the performance of your system, and give you back an indice. Base 1 is a Window 7 / 2 Cores Intel 5 based / H2 database<p>
+				If the number is LOWER than 1, that's mean the machine is SLOWER than the reference machine. UPPER, the machine is faster.
+			  </div>
+				
+				<div id="performancemesurewait" style="background-color:green;color: #FFFFFF;">Please wait, measures in progress</div>
+				<label>Test parameters</label><br>
+				
+				<input type="checkbox"  ng-model="perfctrl.runbonitahometest" title="If checked, a file is write / read in the bonitahome to check the speed on the disk">
+				BonitaHome read/write<br>
+				
+				<input type="checkbox"  ng-model="perfctrl.rundatabasetest" title="If checked, some basic operation is done in the database to check the access">
+				Database test<br>
+				
+				<input type="checkbox"  ng-model="perfctrl.runprocesstest" title="If checked, a process 'LongBoardTestPerformance' is created and deployed by the custom page. 100 instances is created in this process">
+				Process Deploy / Process Create / Process Run for 
+				<input type="text"  ng-model="perfctrl.runprocesstestnumber" title="Number of instance to create. Default is 100" size="6">
+				cases<br>
+				<button id="performancemesurebtn"  ng-click="perfctrl.runtest()" class="btn btn-info btn-xs">Run test</button>
+				<p>
+				<div class="alert alert-danger" role="alert" ng-show="perfctrl.errormessage.length > 0">{{perfctrl.errormessage}}</div>
+			
+				<table class="table table-striped table-hover table-condensed">
+					<tr>
+						<th>Measure</th>
+						<th>Time (ms)</th>
+						<th>Factor</th>
+						<th>Base</th>
+					</tr>
+					<tr> <td>BonitaHome read</td><td>{{perfctrl.BonitaHomeReadMS}} ms </td><td>{{perfctrl.BonitaHomeReadFACTOR}}</td><td>{{perfctrl.BonitaHomeReadBASE}} ms (base)</td></tr>
+					<tr> <td>BonitaHome write</td><td>{{perfctrl.BonitaHomeWriteMS}} ms</td><td>{{perfctrl.BonitaHomeWriteFACTOR}}</td><td>{{perfctrl.BonitaHomeWriteBASE}} ms (base)</td></tr>
+					<tr> <td>Database Meta</td><td>{{perfctrl.DataMetaBASE}} ms</td><td>{{perfctrl.DataMetaFACTOR}}</td><td>{{perfctrl.DataMetaBASE}} ms (base)</td></tr>
+					<tr> <td>Database access</td><td>{{perfctrl.DatabaseMS}} ms</td><td>{{perfctrl.DatabaseFACTOR}}</td><td>{{perfctrl.DatabaseBASE}} ms (base)</td></tr>
+					<tr> <td>Process Deploy</td><td>{{perfctrl.ProcessDeployMS}} ms</td><td>{{perfctrl.ProcessDeployFACTOR}}</td><td>{{perfctrl.ProcessDeployBASE}} ms (base)</td></tr>
+					<tr> <td>Process Create</td><td>{{perfctrl.ProcessCreateMS}} ms</td><td>{{perfctrl.ProcessCreateFACTOR}}</td><td>{{perfctrl.ProcessCreateBASE}} ms (base)</td></tr>
+					<tr> <td>Process Run</td><td>{{perfctrl.ProcessRunMS}} ms</td><td>{{perfctrl.ProcessRunFACTOR}}</td><td>{{perfctrl.ProcessRunBASE}} ms (base)</td></tr>
+					
+					
+				</table>
+		
+				<!-- style="{{performancemesureCssStyle}}" -->
+				<div google-chart chart="chartObject" style="height: 400px; width: 100%; position: relative; "></div>
+			</div>
+			
+		</div>
+	</div>
+	
+	<!-- ng-mouseleave="hover('apps')"  -->
+	<div class="col-lg-12">
+
+		<div class="bs-component" ng-mouseenter="hover('apps')" ng-mouseleave="hover('apps')"  ng-controller="ShowHistoryController as histctrl">
+			<legend class="text-primary"><span class="glyphicon glyphicon-th"></span>Case history</legend>
+			
+			<div class="panel panel-primary">
+				<div class="panel-body">
+					<div class="explanation">
+					Give a CaseId, and then all it's history is displayed.
+					</div>
+					<!-- <form name="myForm" ng-submit="histctrl.showcasehistory()"> -->
+						<table>
+							<tr><td>Case Id</td>				<td> <input id="caseid" type="text" ng-model="histctrl.caseid"  /></td></tr>		
+							<tr><td>Show sub process tasks</td>	<td> <input  type="checkbox" ng-model="histctrl.showSubProcess"  /></td></tr>		
+							
+						</table>
+						<input type="submit" id="showhistorybtn" ng-click="histctrl.showcasehistory()" class="btn btn-info btn-xs" title="Show the history of a case" value="Show history"/><p>						
+						<div id="showhistorywait" style="background-color:green;color: #FFFFFF;">Please wait, request in progress</div>
+				
+					<!-- </form>		 -->
+					<div class="alert alert-danger" role="alert" ng-show="histctrl.errormessage.length > 0">{{histctrl.errormessage}}</div>
+
+					<h2>Overview</h2>
+					<table class="table table-striped table-hover table-condensed">
+						<tr><td>Case State</td><td>{{histctrl.caseState}} &nbsp;&nbsp;
+							<button ng-click="histctrl.cancelCase()" ng-show="histctrl.caseState == 'ACTIF'" class="btn btn-info btn-xs" >Cancel</button>	
+						</td></tr>
+						<tr><td>Start date</td><td>{{histctrl.startdate}}</td></tr>
+						<tr><td>End date</td><td>{{histctrl.enddate}}</td></tr>
+						<tr><td>String index</td><td>{{histctrl.stringindex}}</td></tr>
+						<tr><td>Process Definition</td><td>{{histctrl.processdefinition}}</td></tr>
+					</table>
+					<h2>Synthesis</h2>
+						<table class="table table-striped table-hover table-condensed" style="background-color:#C49E71">
+						<tr>
+							<th>Begin</th>
+							<th>End</th>
+							<th>Name</th>
+							<th>Type</th>
+							<th>State</th>
+							<th>BeginConnector (ms)</th>
+							<th>User (ms)</th>							
+							<th>FinishConnector (ms)</th>
+							
+						</tr>
+						<tr ng-repeat="activitysynthesis in histctrl.synthesis track by $index">
+							<td>{{activitysynthesis.DateBeginST}}</td>	
+							<td>{{activitysynthesis.DateEndST}}</td>	
+							<td>{{activitysynthesis.ActivityName}}</td>
+							<td>{{activitysynthesis.Type}}</td>
+							<td>{{activitysynthesis.State}}</td>
+							<td style="text-align: right">{{activitysynthesis.enterconnector}}</td>
+							<td style="text-align: right">{{activitysynthesis.user}}</td>	
+							<td style="text-align: right">{{activitysynthesis.finishconnector}}</td>	
+							
+							<!-- <td>{{activity.expl}}</td>		 -->						
+						</tr>
+					</table>
+
+					
+					<h2>Detail per activities</h2>
+					See <a href="http://documentation.bonitasoft.com/execution-sequence-states-and-transactions">Documentation</a> for more information on states<b>
+					<input type="checkbox" ng-model="histctrl.showFlowdefnodeid">Show FlowNodeDefid
+					<input type="checkbox" ng-model="histctrl.showParentContainer">Show Parent Container
+					<input type="checkbox" ng-model="histctrl.showParentactivityid">Show Parent Activity
+					<table class="table table-striped table-hover table-condensed" style="background-color:#C49E71">
+						<tr>
+							<th>Date</th>
+							<th>Name</th>
+							<th>Activity Id</th>
+							<th>Perimeter</th>
+							<th>Timer ?</th>
+							<th>Activity Is Terminal</th>
+							<th>Activity Type</th>
+							<th>Activity State</th>
+							<th>Activity Executed By</th>	
+							<th ng-show="histctrl.showFlowdefnodeid" >FlownodeDefId</th>	
+							<th ng-show="histctrl.showParentContainer" >ParentContainer</th>
+							<th ng-show="histctrl.showParentactivityid">parentactivityid</th>							
+						</tr>
+						<tr ng-repeat="activity in histctrl.myActivityHistory track by $index">
+							<td>{{activity.HumanActivityDate}}</td>
+							<td>{{activity.ActivityName}}</td>
+							<td>{{activity.ActivityId}}</td>
+							<td>{{activity.Perimeter}}</td>
+							<td>{{activity.JobIsStillSchedule}}</td>
+							<td>{{activity.IsTerminal}}</td>
+							<td>{{activity.Type}}</td>
+							<td>{{activity.State}}</td>
+							<td>{{activity.executedby}}</td>
+							<td ng-show="histctrl.showFlowdefnodeid"   >{{activity.FlownodeDefId}}</td>
+							<td ng-show="histctrl.showParentContainer" >{{activity.parentcontainer}}</td>
+							<td ng-show="histctrl.showParentactivityid">{{activity.parentactivityid}}</td>
+							<!-- <td>{{activity.expl}}</td> -->
+						</tr>
+					</table>
+					
+					<h2>Detail per timers</h2>
+					<table class="table table-striped table-hover table-condensed" style="background-color:#C49E71">
+						<tr>
+							<th>JobName</th>
+							<th>Schedule</th>
+							<th>Activity Id</th>
+							<th>Activity Name</th>
+						</tr>
+						<tr ng-repeat="scheduletimer in histctrl.TimerListEvents track by $index">
+							<td>{{scheduletimer.JobName}}</td>
+							<td>{{scheduletimer.JobIsStillSchedule}}</td>
+							<td>{{scheduletimer.ActivityId}}</td>
+							<td>{{scheduletimer.ActivityName}}</td>
+						</tr>
+					</table>
+					<h2>Time Line</h2>
+					<!-- style="{{performancemesureCssStyle}}" -->
+					<div google-chart chart="chartTimeline" id="chartTimeline" style="height: 400px; width: 100%; position: relative; "></div>
+			
+				</div>
+			</div>
+		</div>
+	</div>
+		
+		
+
+</div>
+
+
+
+<!-- Third party dependencies -->
+
+<script src="pageResource?page=custompage_longboard&location=3rd-party/jquery.min.js"></script>
+
+<script src="pageResource?page=custompage_longboard&location=3rd-party/angular.min.js"></script>
+
+<script src="pageResource?page=custompage_longboard&location=3rd-party/angular-resource.min.js"></script>
+<script src="pageResource?page=custompage_longboard&location=3rd-party/angular-cookies.min.js"></script>
+
+<script src="pageResource?page=custompage_longboard&location=3rd-party/bootstrap/js/bootstrap.min.js"></script>
+<script src="pageResource?page=custompage_longboard&location=3rd-party/angular-bootstrap-tpls.min.js"></script>
+<script src="pageResource?page=custompage_longboard&location=3rd-party/angular-file-upload.js"></script> 
+<script src="pageResource?page=custompage_longboard&location=3rd-party/ng-google-chart.js"></script> 
+
+
+<!-- Application dependencies -->
+<script src="pageResource?page=custompage_longboard&location=longboardmonitor.js"></script>
+
+</body>
+</html>		
