@@ -15,78 +15,75 @@ import org.bonitasoft.engine.service.impl.ServiceAccessorFactory;
 
 public class LongboardEventHandler implements SHandler<SEvent> {
 
-    /** Bonita technical logger */
-    private final TechnicalLoggerService technicalLog;
+	/** Bonita technical logger */
+	private final TechnicalLoggerService technicalLog;
 
-    private long tenantId;
+	private long tenantId;
 
-    public LongboardEventHandler(
-            final TechnicalLoggerService technicalLog, final long tenantId) {
-        this.technicalLog = technicalLog;
-        this.tenantId = tenantId;
-    }
+	public LongboardEventHandler(final TechnicalLoggerService technicalLog, final long tenantId) {
+		this.technicalLog = technicalLog;
+		this.tenantId = tenantId;
+	}
 
-    private TenantServiceAccessor getTenantServiceAccessor()
-            throws SHandlerExecutionException {
-        try {
+	private TenantServiceAccessor getTenantServiceAccessor() throws SHandlerExecutionException {
+		try {
 
-            ServiceAccessorFactory serviceAccessorFactory = ServiceAccessorFactory.getInstance();
-            return serviceAccessorFactory.createTenantServiceAccessor(tenantId);
-        } catch (Exception e) {
-            throw new SHandlerExecutionException(e.getMessage(), null);
-        }
-    }
+			ServiceAccessorFactory serviceAccessorFactory = ServiceAccessorFactory.getInstance();
+			return serviceAccessorFactory.createTenantServiceAccessor(tenantId);
+		} catch (Exception e) {
+			throw new SHandlerExecutionException(e.getMessage(), null);
+		}
+	}
 
-    public void execute(SEvent event) throws SHandlerExecutionException
-    {
-        // public void execute(SEvent event) throws SHandlerExecutionException {
+	public void execute(SEvent event) throws SHandlerExecutionException {
+		// public void execute(SEvent event) throws SHandlerExecutionException {
 
-        try {
-            Object eventObject = event.getObject();
-            if (eventObject instanceof SHumanTaskInstance) {
-                SHumanTaskInstance humanTaskInstance = (SHumanTaskInstance) eventObject;
+		try {
+			Object eventObject = event.getObject();
+			if (eventObject instanceof SHumanTaskInstance) {
+				SHumanTaskInstance humanTaskInstance = (SHumanTaskInstance) eventObject;
 
-                if (humanTaskInstance.getStateName() == ActivityStates.READY_STATE) {
-                    TenantServiceAccessor tenantServiceAccessor;
+				if (humanTaskInstance.getStateName() == ActivityStates.READY_STATE) {
+					TenantServiceAccessor tenantServiceAccessor;
 
-                } else if (humanTaskInstance.getStateName() == ActivityStates.COMPLETED_STATE) {
-                    Long executionTime;
+				} else if (humanTaskInstance.getStateName() == ActivityStates.COMPLETED_STATE) {
+					Long executionTime;
 
-                    SUser assignee = getTenantServiceAccessor().getIdentityService().getUser(humanTaskInstance.getAssigneeId());
+					SUser assignee = getTenantServiceAccessor().getIdentityService().getUser(humanTaskInstance.getAssigneeId());
 
-                }
+				}
 
-            } else if (eventObject instanceof SIntermediateCatchEventInstance) {
-            }
-        } catch (SBonitaException e) {
-            throw new SHandlerExecutionException(e.getMessage(), e);
-        } catch (Exception ex) {
-            throw new SHandlerExecutionException(ex.getMessage(), null);
-        } finally {
+			} else if (eventObject instanceof SIntermediateCatchEventInstance) {
+			}
+		} catch (SBonitaException e) {
+			throw new SHandlerExecutionException(e.getMessage(), e);
+		} catch (Exception ex) {
+			throw new SHandlerExecutionException(ex.getMessage(), null);
+		} finally {
 
-        }
-    }
+		}
+	}
 
-    public boolean isInterested(SEvent event) {
-        boolean isInterested = false;
+	public boolean isInterested(SEvent event) {
+		boolean isInterested = false;
 
-        // Get the object associated with the event
-        Object eventObject = event.getObject();
-        if (eventObject instanceof SNamedElement) {
-        }
-        // Check that event is related to a task
-        if (eventObject instanceof SHumanTaskInstance) {
-            isInterested = true;
-        } else if (eventObject instanceof SIntermediateCatchEventInstance) {
-            isInterested = true;
+		// Get the object associated with the event
+		Object eventObject = event.getObject();
+		if (eventObject instanceof SNamedElement) {
+		}
+		// Check that event is related to a task
+		if (eventObject instanceof SHumanTaskInstance) {
+			isInterested = true;
+		} else if (eventObject instanceof SIntermediateCatchEventInstance) {
+			isInterested = true;
 
-        }
+		}
 
-        return isInterested;
-    }
+		return isInterested;
+	}
 
-    public String getIdentifier() {
-        return "LongBoard Handler";
-    }
+	public String getIdentifier() {
+		return "LongBoard Handler";
+	}
 
 }

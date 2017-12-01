@@ -7,6 +7,8 @@
 <html class="no-js lt-ie9"> <![endif]-->
 <!--[if gt IE 8]><!-->
 <html class="no-js"> <!--<![endif]-->
+
+
 <head>
     <meta charset="utf-8">
     <title>Longboard Monitor</title>
@@ -24,7 +26,23 @@
 	<script type="text/javascript" src="https://www.google.com/uds/api/visualization/1.0/ff67c3772da186a412ae3231c32409e9/format+fr,default+fr,ui+fr,corechart+fr.I.js"></script>
 	<link href="https://ajax.googleapis.com/ajax/static/modules/gviz/1.0/core/tooltip.css" rel="stylesheet" type="text/css">
 		
-		
+			
+<style>
+.Loading {
+    display: inline-block;
+    vertical-align: middle;
+    background-position: center;
+    background:no-repeat;
+    background-image: url('data:image/gif;base64,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');
+    width:20px;
+    height:20px;
+    margin-top:6px;
+    margin-right:7px;
+}
+.AutocompleteDropDown {
+	background-color: #fcf8e3;
+	}
+</style>
 </head>
 <body ng-app="longboardmonitor">
 
@@ -33,7 +51,7 @@
 
 	<center>
 	<table><tr><td><h1>Long board</h1></td><td rowspan="2"><img src="pageResource?page=custompage_longboard&location=img/longboard.jpg" width="150" heigth="150" /></td></tr>
-		<tr><td style="font-size:0.8em"> <a href="" ng-click="mainctrl.showhistory( ! mainctrl.isshowhistory )">V2.2</a></td></tr>
+		<tr><td style="font-size:0.8em"> <a href="" ng-click="mainctrl.showhistory( ! mainctrl.isshowhistory )">V3.0</a></td></tr>
 		<tr><td>
 		<div id="showHistory" ng-show="mainctrl.isshowhistory" style="border-width:2px;border-style:ridge;border-color:blue">
 		1.0 First version<br>
@@ -45,15 +63,385 @@
 		2.0 New control Monitor and improve the Case History
 		2.1 Bonita V7 integration
 		2.2 Run in a Living application
+		3.0 Case History Retry, Update timer, send message and timer
 		</td></tr>
 		</div>
 	</table>
 	</center>
 </div>
 
+
+<div class="col-lg-12">
+
+	<div class="bs-component" ng-mouseenter="hover('apps')" ng-mouseleave="hover('apps')"  ng-controller="ShowHistoryController as histctrl">
+		<legend class="text-primary"><span class="glyphicon glyphicon-th"></span>Case history</legend>
+		<div class="panel panel-primary">
+			<div class="panel-body">
+			
+				<div class="explanation">
+				Give a CaseId, and then all it's history is displayed.
+				</div>
+					
+							
+				<div class="row">
+						<div class="col-lg-3">
+						<!--  search info -->
+						<table>
+							<tr><td>Case Id</td><td> <input type="number" ng-model="histctrl.param.caseId"  /></td></tr>
+							<tr><td>Show sub process tasks</td>	<td> <input  type="checkbox" ng-model="histctrl.param.showSubProcess"  /></td></tr>		
+							<tr><td colspan="2">
+								<table>
+									<tr><td>  <div ng-show="histctrl.historyinprogress"><span class="Loading">.</span></div>
+									</td><td> <button ng-click="histctrl.showcasehistory()" ng-disabled="histctrl.historyinprogress" class="btn btn-info btn-xl" title="Show the history of a case" value="Show history">Show</button><p>
+									</td></tr>
+								</table>						
+							</td></tr>
+						</table>
+					</div>
+				
+								
+					<div class="col-lg-8">
+						<!--  search index -->
+						<div class="panel panel-info">
+							<div class="panel-heading">Search Index</div>
+							<div>
+								<table class="table table-striped table-hover table-condensed">
+									<tr><td>index 1:</td><td><input type="text" ng-model="histctrl.param.search1"></td></tr>
+									<tr><td>index 2:</td><td><input type="text" ng-model="histctrl.param.search2"></td></tr>
+									<tr><td>index 3:</td><td><input type="text" ng-model="histctrl.param.search2"></td></tr>
+									<tr><td>index 4:</td><td><input type="text" ng-model="histctrl.param.search3"></td></tr>
+									<tr><td>index 5:</td><td><input type="text" ng-model="histctrl.param.search4"></td></tr>
+									<tr><td colspan="2">
+										<button ng-click="histctrl.searchByIndex()" ng-disabled="histctrl.historyinprogress" class="btn btn-info btn-xl" title="Search cases by index" >Search</button>
+										</td>
+									</tr>
+									<tr><td colspan="2">
+										<table class="table table-striped table-hover table-condensed" style="background-color:#dff0d8">
+											<tr>
+												<th>CaseID</th>
+												<th>Start date</th>
+												<th>Process Information</th>
+												<th>Index 1</th>
+												<th>Index 2</th>
+												<th>Index 3</th>
+												<th>Index 4</th>
+												<th>Index 5</th>
+												<th></th>
+											</tr>											
+											<tr ng-repeat="casesearch in histctrl.searchindexresult track by $index">
+												<td>{{casesearch.caseId}}</td>
+												<td>{{casesearch.startDateSt}}</td>													
+												<td>{{casesearch.processInfo}}</td>	
+												<td>{{casesearch.index1}}</td>	
+												<td>{{casesearch.index2}}</td>	
+												<td>{{casesearch.index3}}</td>	
+												<td>{{casesearch.index4}}</td>	
+												<td>{{casesearch.index5}}</td>	
+												<td>
+													<button ng-click="histctrl.param.caseId=casesearch.caseId;histctrl.showcasehistory()" ng-disabled="histctrl.historyinprogress" class="btn btn-info btn-xs" title="Show history" >Show</button>
+												</td>
+											</tr>
+										</table>
+									</td>
+									</tr>
+								</table>	
+							</div>
+						</div>	
+					</div> <!--  end col-lg-4 -->
+				</div> <!--  end class=row -->
+				<p>
+				<div class="alert alert-danger" role="alert" ng-show="histctrl.casehistory.errormessage.length > 0">{{histctrl.casehistory.errormessage}}</div>
+
+					<h2><button ng-click="histctrl.showcasehistory()" ng-disabled="histctrl.historyinprogress" class="btn btn-info btn-xs"><span class="glyphicon glyphicon-refresh"></span></button>Overview </h2>
+					<table class="table table-striped table-hover table-condensed">
+						<tr><td class="tabletitle" style="background-color:#fcf8e3" >Case Id</td>
+							<td >{{histctrl.casehistory.caseId}} &nbsp;&nbsp;
+								<span ng-show="histctrl.casehistory.archiveCaseId">(Archived Case Id : {{histctrl.casehistory.archiveCaseId}}</span>
+							</td>
+						<tr><td class="tabletitle" style="background-color:#fcf8e3" >Case State</td><td>{{histctrl.casehistory.caseState}} &nbsp;&nbsp;
+							<button ng-click="histctrl.cancelCase()" ng-show="histctrl.casehistory.caseState == 'ACTIF'" class="btn btn-danger btn-xs" >Cancel</button>	
+						</td></tr>
+						<tr><td class="tabletitle" style="background-color:#fcf8e3" >Start date</td><td>{{histctrl.casehistory.startDateSt}}</td></tr>
+						<tr><td class="tabletitle" style="background-color:#fcf8e3" >End date</td><td>{{histctrl.casehistory.endDateSt}}</td></tr>
+						<tr><td class="tabletitle" style="background-color:#fcf8e3" >Archive date</td><td>{{histctrl.casehistory.archivedDateSt}}</td></tr>
+						<tr><td class="tabletitle" style="background-color:#fcf8e3" >String index</td><td>{{histctrl.casehistory.stringIndex}}</td></tr>
+						<tr><td class="tabletitle" style="background-color:#fcf8e3" >Process Definition</td><td>{{histctrl.casehistory.processInfo}}</td></tr>
+					</table>
+					<h2><button ng-click="histctrl.showcasehistory()" ng-disabled="histctrl.historyinprogress" class="btn btn-info btn-xs"><span class="glyphicon glyphicon-refresh"></span></button>Synthesis</h2>
+						<table class="table table-striped table-hover table-condensed" >
+						<tr>
+							<th class="tabletitle" style="background-color:#fcf8e3" >Begin</th>
+							<th class="tabletitle" style="background-color:#fcf8e3" >End</th>
+							<th class="tabletitle" style="background-color:#fcf8e3" >Name</th>
+							<th class="tabletitle" style="background-color:#fcf8e3" >Type</th>
+							<th class="tabletitle" style="background-color:#fcf8e3" >State</th>
+							<th class="tabletitle" style="background-color:#fcf8e3" >BeginConnector (ms)</th>
+							<th class="tabletitle" style="background-color:#fcf8e3" >User (ms)</th>							
+							<th class="tabletitle" style="background-color:#fcf8e3">FinishConnector (ms)</th>
+							
+						</tr>
+						<tr ng-repeat="activitysynthesis in histctrl.casehistory.synthesis track by $index">
+							<td>{{activitysynthesis.dateBeginSt}}</td>	
+							<td>{{activitysynthesis.dateEndST}}</td>	
+							<td>{{activitysynthesis.activityName}}</td>
+							<td>{{activitysynthesis.type}}</td>
+							<td>{{activitysynthesis.state}}</td>
+							<td style="text-align: right">{{activitysynthesis.enterconnector}}</td>
+							<td style="text-align: right">{{activitysynthesis.user}}</td>	
+							<td style="text-align: right">{{activitysynthesis.finishconnector}}</td>	
+							
+							<!-- <td>{{activity.expl}}</td>		 -->						
+						</tr>
+					</table>
+
+					<h2><button ng-click="histctrl.showcasehistory()" ng-disabled="histctrl.historyinprogress" class="btn btn-info btn-xs"><span class="glyphicon glyphicon-refresh"></span></button>Actives</h2>
+						<table class="table table-striped table-hover table-condensed"> <!--   style="background-color:#dff0d8"> -->
+						<tr>
+							<th class="tabletitle" style="background-color:#fcf8e3">Date</th>
+							<th class="tabletitle" style="background-color:#fcf8e3">Name</th>
+							<th class="tabletitle" style="background-color:#fcf8e3">Activity Id</th>
+							<th class="tabletitle" style="background-color:#fcf8e3">Timer ?</th>
+							<th class="tabletitle" style="background-color:#fcf8e3">Activity Is Terminal</th>
+							<th class="tabletitle" style="background-color:#fcf8e3">Activity Type</th>
+							<th class="tabletitle" style="background-color:#fcf8e3">Activity State</th>
+							<th class="tabletitle" style="background-color:#fcf8e3"></th>	
+						</tr>
+						<tr ng-repeat="activity in histctrl.casehistory.actives track by $index">
+							<td>{{activity.humanActivityDateSt}}</td>	
+							<td>{{activity.activityName}}</td>
+							<td>{{activity.activityId}}</td>
+							<td>{{activity.jobIsStillSchedule}}</td>
+							<td>{{activity.isTerminal}}</td>
+							<td>{{activity.type}}</td>
+							<td>{{activity.state}}</td>
+							<td>
+								<button ng-click="histctrl.executeActivity(activity)" ng-show="activity.ACTIONEXECUTE === true" class="btn btn-warning btn-xs" >Execute</button>
+								<div ng-bind-html="histctrl.getListEvents(activity.listevents )"></div>
+								<div class="label label-info">{{activity.statusexecution}}</div>
+							</td>
+							
+						</tr>
+					</table>
+
+					
+					<h2><button ng-click="histctrl.showcasehistory()" ng-disabled="histctrl.historyinprogress" class="btn btn-info btn-xs"><span class="glyphicon glyphicon-refresh"></span></button>Activities</h2>
+					See <a href="http://documentation.bonitasoft.com/execution-sequence-states-and-transactions">Documentation</a> for more information on states
+					<input type="checkbox" ng-model="histctrl.showFlowdefnodeid">Show FlowNodeDefid
+					<input type="checkbox" ng-model="histctrl.showParentContainer">Show Parent Container
+					<input type="checkbox" ng-model="histctrl.showParentactivityid">Show Parent Activity
+					<table class="table table-striped table-hover table-condensed">
+						<tr>
+							<th class="tabletitle" style="background-color:#fcf8e3">Date</th>
+							<th class="tabletitle" style="background-color:#fcf8e3">Name</th>
+							<th class="tabletitle" style="background-color:#fcf8e3">Activity Id</th>
+							<th class="tabletitle" style="background-color:#fcf8e3">Perimeter</th>
+							<th class="tabletitle" style="background-color:#fcf8e3">Timer ?</th>
+							<th class="tabletitle" style="background-color:#fcf8e3">Terminal ?</th>
+							<th class="tabletitle" style="background-color:#fcf8e3">Type</th>
+							<th class="tabletitle" style="background-color:#fcf8e3">State</th>
+							<th class="tabletitle" style="background-color:#fcf8e3">Executed By</th>	
+							<th class="tabletitle" style="background-color:#fcf8e3" ng-show="histctrl.showFlowdefnodeid" >FlownodeDefId</th>	
+							<th class="tabletitle" style="background-color:#fcf8e3" ng-show="histctrl.showParentContainer" >ParentContainer</th>
+							<th class="tabletitle" style="background-color:#fcf8e3" ng-show="histctrl.showParentactivityid">parentactivityid</th>							
+						</tr>
+						<tr ng-repeat="activity in histctrl.casehistory.activities track by $index">
+							<td style="{{histctrl.getStyleActivity(activity)}}">{{activity.humanActivityDateSt}}</td>
+							<td style="{{histctrl.getStyleActivity(activity)}}">{{activity.activityName}}</td>
+							<td style="{{histctrl.getStyleActivity(activity)}}">{{activity.activityId}}</td>
+							<td style="{{histctrl.getStyleActivity(activity)}}">{{activity.perimeter}}</td>
+							<td style="{{histctrl.getStyleActivity(activity)}}">{{activity.jobIsStillSchedule}} {{activity.jobScheduleDate}}</td>
+							<td style="{{histctrl.getStyleActivity(activity)}}">{{activity.isTerminal}}</td>
+							<td style="{{histctrl.getStyleActivity(activity)}}">{{activity.type}}</td>
+							<td style="{{histctrl.getStyleActivity(activity)}}">{{activity.state}}</td>
+							<td style="{{histctrl.getStyleActivity(activity)}}">{{activity.executedby}}</td>
+							<td style="{{histctrl.getStyleActivity(activity)}}" ng-show="histctrl.showFlowdefnodeid"   >{{activity.FlownodeDefId}}</td>
+							<td style="{{histctrl.getStyleActivity(activity)}}" ng-show="histctrl.showParentContainer" >{{activity.parentcontainer}}</td>
+							<td style="{{histctrl.getStyleActivity(activity)}}"  ng-show="histctrl.showParentactivityid">{{activity.parentactivityid}}</td>
+							<!-- <td>{{activity.expl}}</td> -->
+						</tr>
+					</table>
+					
+					<h2><button ng-click="histctrl.showcasehistory()" ng-disabled="histctrl.historyinprogress" class="btn btn-info btn-xs"><span class="glyphicon glyphicon-refresh"></span></button>Timers</h2>
+					<table class="table table-striped table-hover table-condensed">
+						<tr>
+							<!-- <th>JobName</th> -->
+							<th class="tabletitle" style="background-color:#fcf8e3">Activity Name</th>
+							<th class="tabletitle" style="background-color:#fcf8e3">Activity Id</th>
+							<th class="tabletitle" style="background-color:#fcf8e3">Schedule</th>
+							<th class="tabletitle" style="background-color:#fcf8e3">Date</th>						
+							<th class="tabletitle" style="background-color:#fcf8e3"></th>
+						
+						</tr>
+						<tr ng-repeat="scheduletimer in histctrl.casehistory.timers track by $index">
+							<!--  <td>{{scheduletimer.jobName}}</td> -->
+							<td>{{scheduletimer.activityName}}</td>
+							<td>{{scheduletimer.activityId}}</td>
+							<td>{{scheduletimer.jobIsStillSchedule}}</td>
+							<td>{{scheduletimer.timerDate}}</td>
+							<td> 
+								<table>
+									<tr><td>
+										<button ng-click="scheduletimer.updatetype='DELAY'; scheduletimer.updatevalue='0';histctrl.updateTimer( scheduletimer )" class="btn btn-warning btn-xs" >Immediat</button>	
+										<select ng-model="scheduletimer.updatetype">
+												<option value="DELAY" selected>Delay</option>
+												<option value="DATE">Date</option>									
+											</select>
+										</td><td>
+											<div ng-show="scheduletimer.updatetype == 'DELAY'">Delay (in secondes)</div>
+											<div ng-show="scheduletimer.updatetype == 'DATE'">Date (format yyyy-mm-dd HH24:MM:ss)</div>
+										</td><td>
+											<input ng-model="scheduletimer.updatevalue" />
+										</td><td>
+											<button ng-click="histctrl.updateTimer( scheduletimer )" class="btn btn-warning btn-xs" >Update</button>	
+										</td>
+									</tr>
+									<tr><td colspan="4">
+										<div ng-bind-html="histctrl.getListEvents(scheduletimer.listevents )"></div>
+										<div class="label label-info">{{scheduletimer.statusexecution}}</div>
+									</td></tr>
+								</table>
+							</td>
+								
+						</tr>
+					</table>
+					<h2><button ng-click="histctrl.showcasehistory()" ng-disabled="histctrl.historyinprogress" class="btn btn-info btn-xs"><span class="glyphicon glyphicon-refresh"></span></button>Signals</h2>
+					<table class="table table-striped table-hover table-condensed">
+						<tr>
+							<!-- <th>JobName</th> -->
+							<th class="tabletitle" style="background-color:#fcf8e3">Activity Name</th>
+							<th class="tabletitle" style="background-color:#fcf8e3">Signal</th>
+							<th class="tabletitle" style="background-color:#fcf8e3"></th>
+						
+						</tr>
+						<tr ng-repeat="signal in histctrl.casehistory.signals track by $index">
+							<td>{{signal.activityName}}</td>
+							<td>{{signal.signalName}}</td>
+							<td> <div ng-show="histctrl.historyinprogress"><span class="Loading">.</span></div> <button ng-click="histctrl.sendSignal( signal )" class="btn btn-warning btn-xs" ng-disabled="histctrl.historyinprogress">Send signal</button><p>
+							<div ng-bind-html="histctrl.getListEvents(signal.listevents )"></div>
+							
+							<span class="explanation">Attention, a signal will unlock all tasks waiting on this signal</span>  
+							</td>
+						</tr>	
+					</table>
+					
+					<h2><button ng-click="histctrl.showcasehistory()" ng-disabled="histctrl.historyinprogress" class="btn btn-info btn-xs"><span class="glyphicon glyphicon-refresh"></span></button>Messages</h2>
+					<table class="table table-striped table-hover table-condensed">
+						<tr>
+							<th class="tabletitle" style="background-color:#fcf8e3">Activity Name</th>
+							<th class="tabletitle" style="background-color:#fcf8e3">Message name</th>
+							<th class="tabletitle" style="background-color:#fcf8e3">Correlation</th>
+							<th class="tabletitle" style="background-color:#fcf8e3">Content</th>
+						
+						</tr>
+						<tbody ng-repeat="message in histctrl.casehistory.messages track by $index">
+						<tr>
+							<td>{{message.activityName}}</td>
+							<td>{{message.messageName}}</td>
+							<td>
+								<table >
+									<tr  ng-repeat="corr in message.correlations track by $index">
+										<td style="border: 1px solid black">{{corr.msgVarName}}</td>
+										<td style="border: 1px solid black"><span title="{{corr.corrDefinition}}">{{corr.msgVarValue}}</span></td>									
+									</tr>
+								</table>
+							</td>
+							<td>
+								<table  class="border:1px">
+									<tr  ng-repeat="content in message.contents track by $index">
+										<td style="border: 1px solid black">{{content.msgVarName}}</td>
+										<td style="border: 1px solid black"><input type="text" ng-model="content.msgVarValue"></td>
+									</tr>
+								</table>
+							</td>
+						</tr>
+						<tr>
+							<td colspan="2">
+							</td>
+							<td colspan="2">
+							<div ng-show="histctrl.historyinprogress"><span class="Loading">.</span></div>
+							<button ng-click="histctrl.sendMessage( histctrl.casehistory, message )" class="btn btn-warning btn-xs" ng-disabled="histctrl.historyinprogress">Send message</button>
+							<div ng-bind-html="histctrl.getListEvents(message.listevents )"></div>
+							</td>
+						</tr>
+						</tbody>
+					</table>
+					
+					<h2><button ng-click="histctrl.showcasehistory()" ng-disabled="histctrl.historyinprogress" class="btn btn-info btn-xs"><span class="glyphicon glyphicon-refresh"></span></button>Time Line</h2>
+					<!-- style="{{performancemesureCssStyle}}" -->
+					<div google-chart chart="chartTimeline" id="chartTimeline" style="height: 400px; width: 100%; position: relative; "></div>
+			
+					<h2><button ng-click="histctrl.showcasehistory()" ng-disabled="histctrl.historyinprogress" class="btn btn-info btn-xs"><span class="glyphicon glyphicon-refresh"></span></button>Variables</h2>
+					<table class="table table-striped table-hover table-condensed">
+						<tr>
+							<th class="tabletitle" style="background-color:#fcf8e3">Variable Name</th>
+							<th class="tabletitle" style="background-color:#fcf8e3">Description</th>
+							<th class="tabletitle" style="background-color:#fcf8e3">Value</th>
+							<th class="tabletitle" style="background-color:#fcf8e3">Type</th>	
+						</tr>
+						<tr ng-repeat="variable in histctrl.casehistory.variables track by $index">
+							<td>{{variable.name}}</td>
+							<td>{{variable.description}}</td>
+							<td>{{variable.value}}</td>
+							<td>{{variable.type}}</td>
+						</tr>
+					</table>
+					
+					<h2><button ng-click="histctrl.showcasehistory()" ng-disabled="histctrl.historyinprogress" class="btn btn-info btn-xs"><span class="glyphicon glyphicon-refresh"></span></button>Archived Variables</h2>
+					Show Archived data <input  type="checkbox" ng-model="histctrl.param.showArchivedData"  />
+					
+					<table class="table table-striped table-hover table-condensed">
+						<tr>
+							<th class="tabletitle" style="background-color:#fcf8e3">Date</th>
+							<th class="tabletitle" style="background-color:#fcf8e3">containerId</th>
+							<th class="tabletitle" style="background-color:#fcf8e3">sourceId</th>
+							<th class="tabletitle" style="background-color:#fcf8e3">Variable Name</th>
+							<th class="tabletitle" style="background-color:#fcf8e3">Description</th>
+							<th class="tabletitle" style="background-color:#fcf8e3">Value</th>
+							<th class="tabletitle" style="background-color:#fcf8e3">Type</th>	
+						</tr>
+						<tr ng-repeat="variable in histctrl.casehistory.archivedvariables track by $index">
+							<td>{{variable.archiveDate}}</td>
+							<td>{{variable.containerId}}</td>
+							<td>{{variable.sourceId}}</td>
+							<td>{{variable.name}}</td>
+							<td>{{variable.description}}</td>
+							<td>{{variable.value}}</td>
+							<td>{{variable.type}}</td>
+						</tr>
+					</table>
+					<h2><button ng-click="histctrl.showcasehistory()" ng-disabled="histctrl.historyinprogress" class="btn btn-info btn-xs"><span class="glyphicon glyphicon-refresh"></span></button>Documents</h2>
+					<table class="table table-striped table-hover table-condensed">
+						<tr>
+							<th class="tabletitle" style="background-color:#fcf8e3">Document Name</th>
+							<th class="tabletitle" style="background-color:#fcf8e3">Id</th>
+							<th class="tabletitle" style="background-color:#fcf8e3">Content ?</th>
+							<th class="tabletitle" style="background-color:#fcf8e3">Index</th>	
+							<th class="tabletitle" style="background-color:#fcf8e3">StorageId</th>													
+							<th class="tabletitle" style="background-color:#fcf8e3">Url</th>						
+							<th class="tabletitle" style="background-color:#fcf8e3">Creation date</th>
+							<th class="tabletitle" style="background-color:#fcf8e3">File Name</th>
+							<th class="tabletitle" style="background-color:#fcf8e3">Mime type</th>						
+						</tr>
+						<tr ng-repeat="document in histctrl.casehistory.documents track by $index">
+							<td>{{document.name}}</td>
+							<td>{{document.id}}</td>
+							<td>{{document.hascontent}}</td>
+							<td>{{document.docindex}}</td>
+							<td>{{document.contentstorageid}}</td>
+							<td><a href="/bonita/portal/{{document.url}}" target="blanck">{{document.url}}</a></td>
+							<td>{{document.creationdate}}</td>
+							<td>{{document.contentfilename}}</td>
+							<td>{{document.contentmimetype}}</td>
+						</tr>
+					</table>
+					
+				</div>
+			</div>
+		</div>
+	</div> <!--  end caseHistory -->
+
 	<!-- process monitor -->
 	<div class="col-lg-12">
-
 		<div class="bs-component" ng-mouseenter="hover('apps')" ng-mouseleave="hover('apps')"  ng-controller="MonitorProcessController as moniprocessesctrl">
 			<legend class="text-primary"><span class="glyphicon glyphicon-th"></span>Monitor process</legend>
 			
@@ -62,10 +450,13 @@
 					<div class="explanation">
 					Display all processes
 					</div>
-					<button id="collectProcessesbtn" ng-click="moniprocessesctrl.refresh()" class="btn btn-info btn-xs" title="Show the processes and cases"/>Show Processes/cases</button><p>						
 					
-					<div id="collectProcessesWait" style="background-color:green;color: #FFFFFF;">Please wait, collect in progress</div>
-			
+					<table>							
+						<tr><td>  <div ng-show="moniprocessesctrl.inprogress"><span class="Loading">.</span></div>
+						</td><td> <button  ng-click="moniprocessesctrl.refresh()" ng-disabled="moniprocessesctrl.inprogress" class="btn btn-info btn-xs" title="Show the processes and cases"/>Show Processes/cases</button><p>						
+						</td>
+						</tr>
+					</table>
 					<div class="alert alert-danger" role="alert" ng-show="moniprocessesctrl.errormessage.length > 0">{{moniprocessesctrl.errormessage}}</div>
 					
 					<a href="" ng-click="moniprocessesctrl.showlegend( ! moniprocessesctrl.isshowlegend )">Legend</a>
@@ -93,7 +484,7 @@
 						
 						<br>
 						<!-- <table class="table table-striped table-hover table-condensed" style="background-color:#C49E71"> -->
-						<table class="table table-hover table-condensed" >
+						<table class="table table-striped table-hover table-condensed">
 						<tr style="background-color:#007DB3">
 							<th>Details</th>
 							<th>Name</th>
@@ -206,86 +597,119 @@
 				<div class="alert alert-danger" role="alert" ng-show="timetrackerctrl.errormessage.length > 0">{{timetrackerctrl.errormessage}}</div>
 				<!-- <span style="color:red">{{timetrackerctrl.errormessage}}</span>-->
 				
-				<div style="text-align:right"><a href=""  ng-click="timetrackerctrl.showexplanation( ! timetrackerctrl.isshowexplanation )"> <img src="pageResource?page=custompage_longboard&location=img/wizard.gif" />How to Install the service ?</a></div>
-				<div id="showExplanation" ng-show="timetrackerctrl.isshowexplanation" class="explanation" style="border-width:2px;border-style:ridge;border-color:red">
-					<center><button id="hideexpl" ng-click="timetrackerctrl.showexplanation( false )" class="btn btn-info btn-xs">Hide</button></center><p>
-					To run the Time Tracker, you have to follow this procedure:
-					<h2>V6.x</h2>
-					<li>MOVE the TimeTracker service V2 (found with this Custom page on &lt;BONITA_HOME&gt;client/tenants/&lt;TENANTID&gt;/work/pages/custompage_longboard/lib/TimeTrackerV2.jar File under &lt;TOMCAT&gt;/webapps/bonita/WEB-INF/lib
-					<li>change the service definition on &lt;BONITAHOME&gt;/server/tenants/&lt;TENANTID&gt;/conf/services : <br>
-							&lt;bean id="timeTracker" class="org.bonitasoft.engine.tracking.TimeTrackerV2"&gt;
-					<li> restart the Bonita application
-					<h2>V7.x</h2>
-					<li>MOVE the TimeTracker service V2 (found with this Custom page on &lt;BONITA_HOME&gt;/client/tenants/&lt;TENANTID&gt;/work/pages/custompage_longboard/lib/TimeTrackerV2.jar File under &lt;TOMCAT&gt;/webapps/bonita/WEB-INF/lib
-					<li>Edit the service definition on &lt;BONITAHOME&gt;/engine-server/conf/tenants/&lt;TENANTID&gt;/bonita-tenants-custom.xml : <br>
-					and add inside the content of the bean TimeTracker found on &lt;BONITA_HOME&gt;/client/tenants/&lt;TENANTID&gt;/work/pages/custompage_longboard/timetrackerlib/cfg-bonita-time-tracker.xml
-							&lt;bean id="timeTracker" class="org.bonitasoft.engine.tracking.TimeTrackerV2"&gt;
-					<li> restart the Bonita application
-					
+				
+				<div ng-show="! timetrackerctrl.isinit()">
+					Refresh first
 				</div>
-				
-				
-				<div ng-show=" ! timetrackerctrl.isstarted()">
-					<img src="pageResource?page=custompage_longboard&location=img/stop.gif">
-					<button id="startbtn" ng-click="timetrackerctrl.runService( true )" class="btn btn-info btn-xs">Start</button>
-				</div>
-				<div ng-show="timetrackerctrl.isstarted()">
-					<img src="pageResource?page=custompage_longboard&location=img/start.gif">
-					<button id="stopbtn" ng-click="timetrackerctrl.runService( false )" class="btn btn-info btn-xs">Stop</button>
-				</div>
-				<div class="alert alert-success" role="alert">{{timetrackerctrl.msg}} {{timetrackerctrl.startedmsg}}</div>
-				
-				<div id="collectTimeTrackerwait" style="background-color:green;color: #FFFFFF;">Please wait, collect in progress</div>
-			
-				<!-- Simulation ? <input type="checkbox" ng-model="timetrackerctrl.issimulation"> &nbsp; -->
-				<button id="refreshTimeTracker" ng-click="timetrackerctrl.refresh()" class="btn btn-info btn-xs">Refresh</button>
-				
-				{{timetrackerctrl.info}}
-				<h3>All informations</h1>
-				Show all informations ? <input type="checkbox" ng-model="timetrackerctrl.showallinformations">
-				Show Detail informations ? <input type="checkbox" ng-model="timetrackerctrl.showdetaildescriptionallinformations"><p>
-				<div ng-show="timetrackerctrl.showallinformations">
-					<table class="table table-striped table-hover table-condensed" style="background-color:#C49E71">
+				<div ng-show="timetrackerctrl.isinit() && ! timetrackerctrl.isstarted()">
+					<table>
 						<tr>
-							<th>timestamp</th>
-							<th>Name</th>
-							<th>Connector</th>
-							<th>Process</th>
-							<th>CaseId</th>							
-							<th ng-show="timetrackerctrl.showdetaildescriptionallinformations">description</th>
-							<th>duration</th>
-						</tr>
-						<tr ng-repeat="record in timetrackerctrl.allrecords track by $index">
-							<td>{{record.timestampUser}}</td>
-							<td>{{record.shortname}}</td>
-							<td>{{record.connectordefinitionname}}</td>
-							<td>{{record.processdefinitionname}} ( {{record.processdefinitionversion}} )</td>
-							<td>{{record.connectorinstanceid}}</td>
-							<td ng-show="timetrackerctrl.showdetaildescriptionallinformations">{{record.description}}</td>
-							<td>{{record.duration}}</td>
+							<td><img src="pageResource?page=custompage_longboard&location=img/stop.gif">
+							</td><td><h4><i>Inactive</i></h4></td>
+							<td colspan="2">	
+								<button  ng-click="timetrackerctrl.runService( true )" ng-disabled="timetrackerctrl.inprogress" class="btn btn-danger btn-xs">Start recording</button>
+							</td>
 						</tr>
 					</table>
 				</div>
-				<h3>Top 10 long running</h1>
-					Show Detail informations ? <input type="checkbox" ng-model="timetrackerctrl.showdetaildescriptiontop10"><p>
-					<table class="table table-striped table-hover table-condensed" style="background-color:#C49E71">
+				<div ng-show="timetrackerctrl.isinit() && timetrackerctrl.isstarted()">
+					<table>
 						<tr>
+							<td><img src="pageResource?page=custompage_longboard&location=img/start.gif">
+							</td><td><h4><i>Active</i></h4></td>						
+							<td colspan="2">	
+								<button  ng-click="timetrackerctrl.runService( false )" ng-disabled="timetrackerctrl.inprogress" class="btn btn-info btn-xs">Stop Recording</button>
+							</td>
+						</tr>
+					</table>	
+				</div>
+				<div class="well"  ng-show="timetrackerctrl.msg.length>0 && timetrackerctrl.startedmsg.length>0">{{timetrackerctrl.msg}} {{timetrackerctrl.startedmsg}}</div>
+				{{timetrackerctrl.information}}
+				
+				<table>
+					<tr><td>  <div ng-show="timetrackerctrl.inprogress"><span class="Loading">.</span></div>
+						</td><td>
+							<!-- Simulation ? <input type="checkbox" ng-model="timetrackerctrl.issimulation"> &nbsp; -->
+						 <button ng-click="timetrackerctrl.refresh()" ng-disabled="timetrackerctrl.inprogress" class="btn btn-info btn-xs"><span class="glyphicon glyphicon-refresh"></button>
+						</td>
+					</tr>
+				</table>
+				
+				
+				<h3>
+				<a href="#" ng-click="timetrackerctrl.showAllInfo = ! timetrackerctrl.showAllInfo" style="text-decoration:none">					
+			  				<span ng-show="timetrackerctrl.showAllInfo" class="glyphicon glyphicon-chevron-down" style="font-size: 18px;"></span>
+	  				</a>
+					<a href="#" ng-click="timetrackerctrl.showAllInfo = ! timetrackerctrl.showrange" style="text-decoration:none">					
+						<span ng-show="! timetrackerctrl.showAllInfo" class="glyphicon glyphicon-chevron-right"  style="font-size: 18px;"></span>
+					</a>All informations</h3>
+				Show Detail informations ? 
+				<input type="checkbox" ng-model="timetrackerctrl.showdetaildescriptionallinformations"><p>
+				<div ng-show="timetrackerctrl.showAllInfo">
+					<table class="table table-striped table-hover table-condensed"> <!-- style="background-color:#C49E71"> -->
+						<tr>
+							<th>#</th>
 							<th>timestamp</th>
-							<th>Name</th>
-							<th>Connector</th>
-							<th>Process</th>
-							<th>ConnectorId</th>							
 							<th>duration</th>
-			
+							<th>CaseId</th>							
+							<th>Process</th>
+							<th>Name</th>
+							<th ng-show="timetrackerctrl.showdetaildescriptionallinformations">description</th>
+						</tr>
+						<tr ng-repeat="record in timetrackerctrl.getPageResult() track by $index" >
+							<td>{{record.range}}</td>
+							<td>{{record.timestampUser}}</td>
+							<td>{{record.duration}}</td>
+							<td>{{record.pid}}</td>
+							<td>{{record.pdefname}} ( {{record.pdefver}} )</td>
+							<td>{{record.shortname}}</td>
+							<td>{{record.connName}}</td>
+							<td ng-show="timetrackerctrl.showdetaildescriptionallinformations">{{record.description}}</td>
+						</tr>
+					</table>
+					
+					<table>
+					<tr>
+						<td>Nb lines per pages : 
+							<select ng-model="timetrackerctrl.display.numberperpage" ng-change="timetrackerctrl.refresh()">						
+								<option value="20">20</option>
+								<option value="100">100</option>
+								<option value="500">500</option>
+							</select>
+							&nbsp;
+						</td><td>
+							<pagination ng-model="timetrackerctrl.display.pagenumber" 
+								total-items="timetrackerctrl.display.totallines" 
+								items-per-page="timetrackerctrl.display.numberperpage"
+							ng-click="timetrackerctrl.refresh()">
+							</pagination>	
+						</td>
+					</tr>
+					</table>
+					
+				</div>
+				<h3>Top 10 long running</h1>
+					<input type="checkbox" ng-model="timetrackerctrl.showdetaildescriptiontop10">Details operation<p>
+					<table class="table table-striped table-hover table-condensed"> <!--  style="background-color:#C49E71"> -->
+						<tr>
+							<th>#</th>
+							<th>timestamp</th>
+							<th>duration</th>
+							<th>CaseId</th>							
+							<th>Process</th>
+							<th>Name</th>
+						
 						</tr>
 						<tbody ng-repeat="record in timetrackerctrl.top10informations track by $index">
 							<tr >
-								<td style="background-color:#99D9EA">{{record.timestampUser}}</td>
-								<td style="background-color:#99D9EA">{{record.shortname}}</td>
-								<td style="background-color:#99D9EA">{{record.connectordefinitionname}}</td>
-								<td style="background-color:#99D9EA">{{record.processdefinitionname}} ( {{record.processdefinitionversion}} )</td>
-								<td style="background-color:#99D9EA">{{record.connectorinstanceid}}</td>
-								<td style="background-color:#99D9EA">{{record.duration}}</td>
+								<td>{{record.range}}</td>
+								<td>{{record.timestampUser}}</td>
+								<td>{{record.duration}}</td>
+								<td>{{record.pid}}</td>
+								<td>{{record.pdefname}} ( {{record.pdefver}} )</td>
+								<td>{{record.shortname}}</td>
+								<td>{{record.connName}}</td>
+						
 							</tr>
 							<tr ng-show="timetrackerctrl.showdetaildescriptiontop10">
 								<td ></td>
@@ -296,14 +720,23 @@
 							</tr>
 						</tbody>
 				</table>
-				<h3>Range information</h1>
-				<select ng-model="timetrackerctrl.rangedisplayinhour" ng-change="timetrackerctrl.refresh()">
+				<h1>Range information</h1>
+				
+				<table>	
+				<tr>
+				<td><input type="checkbox" ng-model="timetrackerctrl.showrangeDuration" ng-change="timetrackerctrl.refresh()">Duration</td>
+				<td><input type="checkbox" ng-model="timetrackerctrl.showrangeMaximum" ng-change="timetrackerctrl.refresh()">Maximum</td>
+				<td><select ng-model="timetrackerctrl.rangedisplayinhour" ng-change="timetrackerctrl.refresh()">
 					<option value="1">1 hour</option>
 					<option value="2">2 hour</option>
 					<option value="10">10 hour</option>
 					<option value="24">1 day</option>
 					<option value="48">2 day</option>
 				</select>
+				</td>
+				<td> <div ng-show="timetrackerctrl.inprogress"><span class="Loading">.</span></div></td>
+				</tr>
+				</table>
 				<!-- <div google-chart chart="chartRange" style="height: 300px; width: 100%; position: relative; "></div> -->
 				<!--			<div google-chart chart="chartRepartitionConnector" style="height: 200px; width: 50%; position: relative; "></div> -->
 				<!--		<div google-chart chart="chartRepartitionWork" style="height: 200px; width: 50%; position: relative; "></div> -->
@@ -320,7 +753,13 @@
 					</tr>
 				</table>
 				
-				<table class="table table-striped table-hover table-condensed" style="background-color:#C49E71">
+					<a href="#" ng-click="timetrackerctrl.showrange = ! timetrackerctrl.showrange" style="text-decoration:none">					
+			  				<span ng-show="timetrackerctrl.showrange" class="glyphicon glyphicon-chevron-down" style="font-size: 18px;"></span>
+	  				</a>
+					<a href="#" ng-click="timetrackerctrl.showrange = ! timetrackerctrl.showrange" style="text-decoration:none">					
+						<span ng-show="! timetrackerctrl.showrange" class="glyphicon glyphicon-chevron-right"  style="font-size: 18px;"></span>
+					</a>Details
+				<table class="table table-striped table-hover table-condensed" ng-show="timetrackerctrl.showrange"> <!-- style="background-color:#C49E71"> -->
 						<tr>
 							<th>Range</th>
 							<th>Nb Execution</th>
@@ -339,8 +778,12 @@
 						</tr>
 				</table>
 				
-				<button id="refreshTimeTracker" ng-click="timetrackerctrl.refresh()" class="btn btn-info btn-xs">Refresh</button>
-			
+				<table>
+					<tr><td>  <div ng-show="timetrackerctrl.inprogress"><span class="Loading">.</span></div>
+						</td><td> <button ng-click="timetrackerctrl.refresh()" ng-disabled="timetrackerctrl.inprogress" class="btn btn-info btn-xs">Refresh</button>
+						</td>
+					</tr>
+				</table>
 			</div>
 		</div>
 				
@@ -355,8 +798,15 @@
 				<div class="explanation">
 				Different informations form the system are retrieved.
 				</div>
-				<div id="collectwait" style="background-color:green;color: #FFFFFF;">Please wait, collect in progress</div>
-				<button id="collectbtn" ng-click="monictrl.refresh()" class="btn btn-info btn-xs">Collect informations</button>
+				<table>
+				<tr><td>  <div ng-show="monictrl.inprogress"><span class="Loading">.</span></div>
+				</td><td>
+					<button ng-click="monictrl.refresh()" ng-disabled="monictrl.inprogress" class="btn btn-info btn-xs">Collect informations</button>
+				</td>
+				</tr>
+				</table>
+				
+				
 				
 				<div class="alert alert-danger" role="alert" ng-show="monictrl.errormessage.length > 0">{{monictrl.errormessage}}</div>
 				
@@ -435,8 +885,14 @@
 				Parameters on the server. All amazing parameters you look for, and you never know where they are !
 				</div>
 				
-				<div id="collectserverparamwait" style="background-color:green;color: #FFFFFF;">Please wait, collect in progress</div>
-				<button id="collectserverparambtn" ng-click="serverparamctrl.refresh()" class="btn btn-info btn-xs">Collect informations</button>
+				<table>
+				<tr><td>  <div ng-show="serverparamctrl.inprogress"><span class="Loading">.</span></div>
+				</td><td>
+					<button ng-click="serverparamctrl.refresh()" ng-disabled="serverparamctrl.inprogress" class="btn btn-info btn-xs">Collect informations</button>
+				</td>
+				</tr>
+				</table>
+
 				<div class="alert alert-danger" role="alert" ng-show="serverparamctrl.errormessage.length > 0">{{serverparamctrl.errormessage}}</div>
 			
 				<table class="table table-striped table-hover table-condensed">
@@ -461,10 +917,9 @@
 				If the number is LOWER than 1, that's mean the machine is SLOWER than the reference machine. UPPER, the machine is faster.
 			  </div>
 				
-				<div id="performancemesurewait" style="background-color:green;color: #FFFFFF;">Please wait, measures in progress</div>
 				<label>Test parameters</label><br>
 				
-				<input type="checkbox"  ng-model="perfctrl.runbonitahometest" title="If checked, a file is write / read in the bonitahome to check the speed on the disk">
+				<input type="checkbox"  ng-model="perfctrl.runbonitahometest" title="If checked, a file is write / read in the directory temp to check the speed on the disk">
 				BonitaHome read/write<br>
 				
 				<input type="checkbox"  ng-model="perfctrl.rundatabasetest" title="If checked, some basic operation is done in the database to check the access">
@@ -474,8 +929,15 @@
 				Process Deploy / Process Create / Process Run for 
 				<input type="text"  ng-model="perfctrl.runprocesstestnumber" title="Number of instance to create. Default is 100" size="6">
 				cases<br>
-				<button id="performancemesurebtn"  ng-click="perfctrl.runtest()" class="btn btn-info btn-xs">Run test</button>
-				<p>
+				
+				<table>
+					<tr><td>  <div ng-show="perfctrl.inprogress"><span class="Loading">.</span></div>
+					</td><td><button  ng-click="perfctrl.runtest()" ng-disabled="perfctrl.inprogress" class="btn btn-info btn-xs">Run test</button>
+					</td>
+					</tr>
+				</table>
+				
+				
 				<div class="alert alert-danger" role="alert" ng-show="perfctrl.errormessage.length > 0">{{perfctrl.errormessage}}</div>
 			
 				<table class="table table-striped table-hover table-condensed">
@@ -485,8 +947,8 @@
 						<th>Factor</th>
 						<th>Base</th>
 					</tr>
-					<tr> <td>BonitaHome read</td><td>{{perfctrl.BonitaHomeReadMS}} ms </td><td>{{perfctrl.BonitaHomeReadFACTOR}}</td><td>{{perfctrl.BonitaHomeReadBASE}} ms (base)</td></tr>
-					<tr> <td>BonitaHome write</td><td>{{perfctrl.BonitaHomeWriteMS}} ms</td><td>{{perfctrl.BonitaHomeWriteFACTOR}}</td><td>{{perfctrl.BonitaHomeWriteBASE}} ms (base)</td></tr>
+					<tr> <td>Directory read</td><td>{{perfctrl.BonitaHomeReadMS}} ms </td><td>{{perfctrl.BonitaHomeReadFACTOR}}</td><td>{{perfctrl.BonitaHomeReadBASE}} ms (base)</td></tr>
+					<tr> <td>Directory write</td><td>{{perfctrl.BonitaHomeWriteMS}} ms</td><td>{{perfctrl.BonitaHomeWriteFACTOR}}</td><td>{{perfctrl.BonitaHomeWriteBASE}} ms (base)</td></tr>
 					<tr> <td>Database Meta</td><td>{{perfctrl.DataMetaBASE}} ms</td><td>{{perfctrl.DataMetaFACTOR}}</td><td>{{perfctrl.DataMetaBASE}} ms (base)</td></tr>
 					<tr> <td>Database access</td><td>{{perfctrl.DatabaseMS}} ms</td><td>{{perfctrl.DatabaseFACTOR}}</td><td>{{perfctrl.DatabaseBASE}} ms (base)</td></tr>
 					<tr> <td>Process Deploy</td><td>{{perfctrl.ProcessDeployMS}} ms</td><td>{{perfctrl.ProcessDeployFACTOR}}</td><td>{{perfctrl.ProcessDeployBASE}} ms (base)</td></tr>
@@ -503,127 +965,6 @@
 		</div>
 	</div>
 	
-	<!-- ng-mouseleave="hover('apps')"  -->
-	<div class="col-lg-12">
-
-		<div class="bs-component" ng-mouseenter="hover('apps')" ng-mouseleave="hover('apps')"  ng-controller="ShowHistoryController as histctrl">
-			<legend class="text-primary"><span class="glyphicon glyphicon-th"></span>Case history</legend>
-			
-			<div class="panel panel-primary">
-				<div class="panel-body">
-					<div class="explanation">
-					Give a CaseId, and then all it's history is displayed.
-					</div>
-					<!-- <form name="myForm" ng-submit="histctrl.showcasehistory()"> -->
-						<table>
-							<tr><td>Case Id</td>				<td> <input id="caseid" type="text" ng-model="histctrl.caseid"  /></td></tr>		
-							<tr><td>Show sub process tasks</td>	<td> <input  type="checkbox" ng-model="histctrl.showSubProcess"  /></td></tr>		
-							
-						</table>
-						<input type="submit" id="showhistorybtn" ng-click="histctrl.showcasehistory()" class="btn btn-info btn-xs" title="Show the history of a case" value="Show history"/><p>						
-						<div id="showhistorywait" style="background-color:green;color: #FFFFFF;">Please wait, request in progress</div>
-				
-					<!-- </form>		 -->
-					<div class="alert alert-danger" role="alert" ng-show="histctrl.errormessage.length > 0">{{histctrl.errormessage}}</div>
-
-					<h2>Overview</h2>
-					<table class="table table-striped table-hover table-condensed">
-						<tr><td>Case State</td><td>{{histctrl.caseState}} &nbsp;&nbsp;
-							<button ng-click="histctrl.cancelCase()" ng-show="histctrl.caseState == 'ACTIF'" class="btn btn-info btn-xs" >Cancel</button>	
-						</td></tr>
-						<tr><td>Start date</td><td>{{histctrl.startdate}}</td></tr>
-						<tr><td>End date</td><td>{{histctrl.enddate}}</td></tr>
-						<tr><td>String index</td><td>{{histctrl.stringindex}}</td></tr>
-						<tr><td>Process Definition</td><td>{{histctrl.processdefinition}}</td></tr>
-					</table>
-					<h2>Synthesis</h2>
-						<table class="table table-striped table-hover table-condensed" style="background-color:#C49E71">
-						<tr>
-							<th>Begin</th>
-							<th>End</th>
-							<th>Name</th>
-							<th>Type</th>
-							<th>State</th>
-							<th>BeginConnector (ms)</th>
-							<th>User (ms)</th>							
-							<th>FinishConnector (ms)</th>
-							
-						</tr>
-						<tr ng-repeat="activitysynthesis in histctrl.synthesis track by $index">
-							<td>{{activitysynthesis.DateBeginST}}</td>	
-							<td>{{activitysynthesis.DateEndST}}</td>	
-							<td>{{activitysynthesis.ActivityName}}</td>
-							<td>{{activitysynthesis.Type}}</td>
-							<td>{{activitysynthesis.State}}</td>
-							<td style="text-align: right">{{activitysynthesis.enterconnector}}</td>
-							<td style="text-align: right">{{activitysynthesis.user}}</td>	
-							<td style="text-align: right">{{activitysynthesis.finishconnector}}</td>	
-							
-							<!-- <td>{{activity.expl}}</td>		 -->						
-						</tr>
-					</table>
-
-					
-					<h2>Detail per activities</h2>
-					See <a href="http://documentation.bonitasoft.com/execution-sequence-states-and-transactions">Documentation</a> for more information on states<b>
-					<input type="checkbox" ng-model="histctrl.showFlowdefnodeid">Show FlowNodeDefid
-					<input type="checkbox" ng-model="histctrl.showParentContainer">Show Parent Container
-					<input type="checkbox" ng-model="histctrl.showParentactivityid">Show Parent Activity
-					<table class="table table-striped table-hover table-condensed" style="background-color:#C49E71">
-						<tr>
-							<th>Date</th>
-							<th>Name</th>
-							<th>Activity Id</th>
-							<th>Perimeter</th>
-							<th>Timer ?</th>
-							<th>Activity Is Terminal</th>
-							<th>Activity Type</th>
-							<th>Activity State</th>
-							<th>Activity Executed By</th>	
-							<th ng-show="histctrl.showFlowdefnodeid" >FlownodeDefId</th>	
-							<th ng-show="histctrl.showParentContainer" >ParentContainer</th>
-							<th ng-show="histctrl.showParentactivityid">parentactivityid</th>							
-						</tr>
-						<tr ng-repeat="activity in histctrl.myActivityHistory track by $index">
-							<td>{{activity.HumanActivityDate}}</td>
-							<td>{{activity.ActivityName}}</td>
-							<td>{{activity.ActivityId}}</td>
-							<td>{{activity.Perimeter}}</td>
-							<td>{{activity.JobIsStillSchedule}}</td>
-							<td>{{activity.IsTerminal}}</td>
-							<td>{{activity.Type}}</td>
-							<td>{{activity.State}}</td>
-							<td>{{activity.executedby}}</td>
-							<td ng-show="histctrl.showFlowdefnodeid"   >{{activity.FlownodeDefId}}</td>
-							<td ng-show="histctrl.showParentContainer" >{{activity.parentcontainer}}</td>
-							<td ng-show="histctrl.showParentactivityid">{{activity.parentactivityid}}</td>
-							<!-- <td>{{activity.expl}}</td> -->
-						</tr>
-					</table>
-					
-					<h2>Detail per timers</h2>
-					<table class="table table-striped table-hover table-condensed" style="background-color:#C49E71">
-						<tr>
-							<th>JobName</th>
-							<th>Schedule</th>
-							<th>Activity Id</th>
-							<th>Activity Name</th>
-						</tr>
-						<tr ng-repeat="scheduletimer in histctrl.TimerListEvents track by $index">
-							<td>{{scheduletimer.JobName}}</td>
-							<td>{{scheduletimer.JobIsStillSchedule}}</td>
-							<td>{{scheduletimer.ActivityId}}</td>
-							<td>{{scheduletimer.ActivityName}}</td>
-						</tr>
-					</table>
-					<h2>Time Line</h2>
-					<!-- style="{{performancemesureCssStyle}}" -->
-					<div google-chart chart="chartTimeline" id="chartTimeline" style="height: 400px; width: 100%; position: relative; "></div>
-			
-				</div>
-			</div>
-		</div>
-	</div>
 		
 		
 
@@ -644,6 +985,7 @@
 <script src="pageResource?page=custompage_longboard&location=3rd-party/angular-bootstrap-tpls.min.js"></script>
 <script src="pageResource?page=custompage_longboard&location=3rd-party/angular-file-upload.js"></script> 
 <script src="pageResource?page=custompage_longboard&location=3rd-party/ng-google-chart.js"></script> 
+<script src="pageResource?page=custompage_longboard&location=3rd-party/angular-sanitize.min.js"></script> 
 
 
 <!-- Application dependencies -->

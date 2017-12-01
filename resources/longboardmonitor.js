@@ -6,7 +6,7 @@
 (function() {
 
 
-var appCommand = angular.module('longboardmonitor', ['googlechart', 'ui.bootstrap']);
+var appCommand = angular.module('longboardmonitor', ['googlechart', 'ui.bootstrap','ngSanitize']);
 
 
 // appCommand.config();
@@ -73,81 +73,244 @@ appCommand.controller('MainController',
 // --------------------------------------------------------------------------
 	
 appCommand.controller('ShowHistoryController',
-	function ($scope, $http) {
-		this.caseid;
-		this.showSubProcess = false;
+	function ($scope, $http,$sce) {
 		this.msg="";
 		this.myActivityHistory = [];
 		this.synthesis = [];
 		this.TimerListEvents =[];
 		
-
+		this.param = {'caseId':0, 'showSubProcess':true};
 
 		// alert('init getActivity '+myActivityHistory+'');
-		$('#showhistorybtn').show();
-		$('#showhistorywait').hide();
 
-								
+		this.historyinprogress=false;
+		this.casehistory={};
+		
+		// -------------------------------------------------
+		// Case History
+		// -------------------------------------------------
 		this.showcasehistory = function()
 		{
 			var self=this;	
 			
-			$('#showhistorybtn').hide();
-			$('#showhistorywait').show();
-			
-			var url='?page=custompage_longboard&action=casehistory&caseid='+this.caseid+"&showSubProcess="+this.showSubProcess;
-								
+			self.historyinprogress=true;
+			var json= encodeURI( angular.toJson(self.param, true));
+
+			var url='?page=custompage_longboard&action=casehistory&paramjson='+json;
+										
 			$http.get( url )
 				.success( function ( jsonResult ) {								
-								console.log("history",jsonResult);
-								self.caseState 					= jsonResult.casestate;
-								self.startdate					= jsonResult.startdate;
-								self.enddate					= jsonResult.enddate;
-								self.stringindex				= jsonResult.stringindex;
-								self.processdefinition			= jsonResult.processdefinition
-								self.synthesis			        = jsonResult.synthesis;
-								self.TimerListEvents            = jsonResult.TimerListEvents;
-								self.myActivityHistory 			= jsonResult.Activities;
-								self.errormessage 				= jsonResult.errormessage; 								
-								
-								$scope.chartTimeline		 	= JSON.parse(jsonResult.chartTimeline);
-								
-								$('#showhistorybtn').show();
-								$('#showhistorywait').hide();
-								
-								console.log("Chart=>>",jsonResult.chartTimeline);
-								
+					console.log(" get history",jsonResult);
+					self.historyinprogress=false;
+					self.casehistory = jsonResult;
+					$scope.chartTimeline		 	= JSON.parse(jsonResult.chartTimeline);
+					console.log("Chart=>>",jsonResult.chartTimeline);
 							}
 						)
 				.error( function ( result ) {
-								alert('error on showHistory ');
+					// alert('error on showHistory ');
+					var jsonResult = JSON.parse(result);
+					self.myActivityHistory=jsonResult;
+					self.historyinprogress=false;
+							}
+						);			
+		};
+		
+		// -------------------------------------------------
+		// searchByIndex
+		// -------------------------------------------------
+		this.searchindexresult=[];
+		this.searchByIndex = function() {
+			var self=this;	
+			
+			self.historyinprogress=true;
+			var json= encodeURI( angular.toJson(self.param, true));
+
+			var url='?page=custompage_longboard&action=searchbyindex&paramjson='+json;
+										
+			$http.get( url )
+				.success( function ( jsonResult ) {								
+								console.log(" get history",jsonResult);
+								self.searchindexresult 			= jsonResult.cases;
+								self.casehistory.errormessage	= jsonResult.message;								
+								self.historyinprogress=false;
+							}
+						)
+				.error( function ( result ) {
 								var jsonResult = JSON.parse(result);
 								self.myActivityHistory=jsonResult;
-								$('#showhistorybtn').show();
-								$('#showhistorywait').hide();
+								self.historyinprogress=false;
 
 								}
 				);			
-		};
+		}
+		// -------------------------------------------------
+		// getStyleActivity
+		// -------------------------------------------------
+		this.getStyleActivity = function(activity) {
+			//if (activity.perimeter ==="ARCHIVED")
+			//	return "background-color: #ecf0f1";
+			if (activity.state==="failed")
+				return "background-color: #f2dede";
+			if (activity.state==="waiting")
+				return "background-color: #d9edf7";
+			if (activity.perimeter ==="ACTIVE")
+				return "background-color: #dff0d8";
+			
+			return "n";
+		}
+		// -------------------------------------------------
+		// CancelCase
+		// -------------------------------------------------
 		this.cancelCase = function()
 		{
-			alert('cancel case');
-			var self=this;			
+			if (! confirm('cancel case'))
+				return;
+			var self=this;	
+			self.historyinprogress=true;
+			
 			var url='?page=custompage_longboard&action=cancelcase&caseid='+this.caseid;
 								
 			$http.get( url )
 				.success( function ( jsonResult ) {
-					alert('Case canceled');				
-					this.showcasehistory();
+					self.historyinprogress=false;
+					self.showcasehistory();
 					}	
 				)
 				.error( function ( result ) {
-					alert('error on caseCancel ');
+					// alert('error on caseCancel ');
+					self.historyinprogress=false;
 					var jsonResult = JSON.parse(result);
 					self.myActivityHistory=jsonResult;
 					}
 				);
 		};
+		
+		// -------------------------------------------------
+		// Execute Activity
+		// -------------------------------------------------
+		this.executeActivity = function( activity )
+		{
+			if (! confirm('Do you want to execute this activity ?'))
+				return;
+			var self=this;
+			var selfactivity=activity;
+			self.historyinprogress=true;
+			
+			var url='?page=custompage_longboard&action=executeactivity&activityid='+activity.activityId;
+								
+			$http.get( url )
+				.success( function ( jsonResult ) {
+					selfactivity.statusexecution=jsonResult.status;
+					selfactivity.listevents=jsonResult.listevents;
+					self.historyinprogress=false;
+					// self.showcasehistory();
+					}	
+				)
+				.error( function ( result ) {
+					self.historyinprogress=false;
+					selfactivity.statusexecution="Error during call";
+					var jsonResult = JSON.parse(result);
+					self.myActivityHistory=jsonResult;
+					}
+				);
+	
+		}
+		
+		// -------------------------------------------------
+		// Update Timer
+		// -------------------------------------------------
+		this.updateTimer = function( scheduletimer )
+		{
+			if (! confirm('Do you want to change this timer ?'))
+				return;
+			var self=this;
+			self.historyinprogress=true;
+			
+			var selfscheduletimer=scheduletimer;
+			var json= encodeURI( angular.toJson(scheduletimer, true));
+
+			var url='?page=custompage_longboard&action=updatetimer&paramjson='+json;
+								
+			$http.get( url )
+				.success( function ( jsonResult ) {
+					self.historyinprogress=false;
+					selfscheduletimer.statusexecution=jsonResult.statusexecution;
+					selfscheduletimer.listevents = jsonResult.listevents;
+					selfscheduletimer.timerDate= jsonResult.datetrigger;
+					// self.showcasehistory();
+					}	
+				)
+				.error( function ( result ) {
+					self.historyinprogress=false;
+					selfscheduletimer.statusexecution="Error during call";
+					
+					}
+				);
+		}
+
+		// -------------------------------------------------
+		// sendSignal
+		// -------------------------------------------------
+		this.sendSignal = function( signal )
+		{
+			if (! confirm('Do you want to send this signal ?'))
+				return;
+			var self=this;
+			self.historyinprogress=true;
+			
+			var selfsignal=signal;
+			var json= encodeURI( angular.toJson(signal, true));
+
+			var url='?page=custompage_longboard&action=sendsignal&paramjson='+json;
+								
+			$http.get( url )
+				.success( function ( jsonResult ) {
+					self.historyinprogress=false;					
+					selfsignal.statusexecution=jsonResult.statusexecution;	
+					selfsignal.listevents = jsonResult.listevents;					
+					// self.showcasehistory();
+					}	
+				)
+				.error( function ( result ) {
+					self.historyinprogress=false;
+					selfsignal.statusexecution="Error during call";
+					
+					}
+				);
+		}
+		// -------------------------------------------------
+		// sendMessage
+		// -------------------------------------------------
+		this.sendMessage = function( caseHistory,  message )
+		{
+			if (! confirm('Do you want to send this message ?'))
+				return;
+			var self=this;
+			self.historyinprogress=true;
+			var selfmessage=message;
+			var json= encodeURI( angular.toJson(message, true));
+
+			var url='?page=custompage_longboard&action=sendmessage&paramjson='+json;
+								
+			$http.get( url )
+				.success( function ( jsonResult ) {
+					self.historyinprogress=false;
+					selfmessage.statusexecution=jsonResult.statusexecution;
+					selfmessage.listevents=jsonResult.listevents;
+					}	
+				)
+				.error( function ( result ) {
+					self.historyinprogress=false;
+					selfmessage.statusexecution="Error during call";
+					
+					}
+				);
+		}
+		
+		this.getListEvents = function ( listevents ) {
+			return $sce.trustAsHtml(  listevents);
+		}
 		
 	} );
 	
@@ -161,7 +324,6 @@ appCommand.controller('ShowHistoryController',
 
 appCommand.controller('MonitoringController', 
 	function ($scope,$http) {
-		$('#collectwait').hide();
 		this.AvailableProcessor=0;
 		this.JvmName="";
 		this.MemUsage=0;
@@ -192,6 +354,7 @@ appCommand.controller('MonitoringController',
 		this.DatabaseProductVersion="";
 		this.errormessage="";
 		this.JVMArgs = "";
+		this.inprogress=false;
 		
 		this.isSowJvmArgs=false;
 		this.showJvmArgs = function( show ) 
@@ -210,10 +373,9 @@ appCommand.controller('MonitoringController',
 		{		    
 			// alert('current availableprocess '+this.AvailableProcessor);
 			
-			$('#collectwait').show();			
-			$('#collectbtn').hide();
 			var self = this;
-	
+			self.inprogress=true;
+				
 			$http.get( '?page=custompage_longboard&action=monitoringapi')
 			 .success(function success(jsonResult) {	
 
@@ -251,21 +413,18 @@ appCommand.controller('MonitoringController',
 								self.DatabaseProductVersion		= jsonResult.DatabaseProductVersion;
 								self.errormessage 				= jsonResult.errormessage;
 								self.JVMArgs					= jsonResult.JVMArgs;
-								
-								$('#collectwait').hide();
-								$('#collectbtn').show();
+								self.inprogress=false;
+
 								}
 						)
 			.error( function ( result ) {
-								$('#collectwait').hide();
-								$('#collectbtn').show();
-								alert('error on monitoring');								
-								}
-					);
+				self.inprogress=false;
+				}
+			);
 							
 		
 		};
-		this.refresh();
+		
 	} );
 	
 	
@@ -277,7 +436,6 @@ appCommand.controller('MonitoringController',
 			
 appCommand.controller('PerformanceController', 
 	function ($scope,$http) {
-		$('#performancemesurewait').hide();
 		
 		$scope.BBonitaHomeWriteBASE=0;
 		this.runprocesstest = false;
@@ -300,13 +458,13 @@ appCommand.controller('PerformanceController',
 		this.rundatabasetest=true;
 		this.runprocesstest=true;
 		this.runprocesstestnumber=100;
-	
+		this.inprogress=false;
+		
 		this.runtest = function()
 		{		    
-			$('#performancemesurewait').show();
-			$('#performancemesurebtn').hide();
-
 			var self = this;
+			self.inprogress=true;
+			
 			var url ='?page=custompage_longboard&action=testperf';
 			url = url + '&runbonitahometest='+this.runbonitahometest;
 			url = url + '&rundatabasetest='+this.rundatabasetest;
@@ -349,17 +507,14 @@ appCommand.controller('PerformanceController',
 
 				$scope.chartObject 					= JSON.parse(jsonResult.chartObject);
 				console.log("Chart=>>",jsonResult.chartObject);
-				$('#performancemesurewait').hide();
-				$('#performancemesurebtn').show();
-			
+				self.inprogress=false;
+
 				
 			  })
 			  .error( function error( result ) {
-								$('#performancemesurewait').hide();
-								$('#performancemesurebtn').show();
-								
-								alert('error on testperf');								
-								}
+					self.inprogress=false;
+					
+				}
 			);
 							
 		};
@@ -383,38 +538,42 @@ appCommand.controller('TimeTrackerController',
 		this.isshowexplanation=false;
 		this.allrecords = [];
 		this.issimulation=false;
-		this.showallinformations=false;
+		this.showallinformations=true;
 		this.rangedisplayinhour=10;
+		this.showrangeDuration=true;
+		this.showrangeMaximum=true;
 		this.showdetaildescriptionallinformations=false;
 		this.showdetaildescriptiontop10=false;
-		$('#refreshTimeTracker').show();
-		$('#collectTimeTrackerwait').hide();
-
+		this.inprogress=false;
+		this.isinitstate=false;
+		
+					
+		this.isinit = function() 
+		{ return this.isinitstate; }
 		
 		this.isstarted = function()
-		{
-			return this.startedstate;
-		}
+		{ return this.startedstate;	}
 		
 		this.showexplanation = function( show )
-		{		
-			this.isshowexplanation = show;
-		}
+		{ this.isshowexplanation = show; }
 			
 		
 		this.runService= function( start )
 		{	
 			// alert('runService '+start);
 			var self = this;
+			self.inprogress=true;
 			$http.get( '?page=custompage_longboard&action=timetrackerservice&start='+start)
 			  .success(function success(jsonResult) {	
 				console.log('receive ',jsonResult);
+				self.inprogress=false;
 				self.startedstate = jsonResult.isregistered;
 				self.startedmsg = jsonResult.startedmsg;
 				self.errormessage = jsonResult.errormessage;
 				self.msg = jsonResult.msg;
 				})
 			  .error( function error( result ) {
+					self.inprogress=false;
 					self.errormessage = 'error during start';								
 				}
 			);
@@ -422,14 +581,13 @@ appCommand.controller('TimeTrackerController',
 		
 		this.refresh = function()
 		{	
-			$('#refreshTimeTracker').hide();
-			$('#collectTimeTrackerwait').show();
-		
+
 			var self = this;
-			$http.get( '?page=custompage_longboard&action=timetrackergetinfos&issimulation='+self.issimulation+'&showallinformations='+this.showallinformations+'&rangedisplayinhour='+this.rangedisplayinhour)
+			self.inprogress=true;
+			$http.get( '?page=custompage_longboard&action=timetrackergetinfos&issimulation='+self.issimulation+'&showallinformations='+this.showallinformations+'&rangedisplayinhour='+this.rangedisplayinhour+"&rangedisplayDuration="+this.showrangeDuration+"&rangedisplayMaximum="+this.showrangeMaximum)
 			  .success(function success(jsonResult) {	
-				$('#refreshTimeTracker').show();
-				$('#collectTimeTrackerwait').hide();
+				self.inprogress=false;
+				self.isinitstate=true; // consider now we have the status
 				// alert('TimeTracker Success '+jsonResult.startedmsg  );
 				console.log('receive ',jsonResult);
 				self.info = jsonResult.info;
@@ -437,6 +595,8 @@ appCommand.controller('TimeTrackerController',
 				self.startedmsg = jsonResult.startedmsg;
 				self.errormessage = jsonResult.errormessage;
 				self.allrecords = jsonResult.allinformations;
+				self.display.totallines =self.allrecords.length; 
+				self.information = jsonResult.information;
 				self.rangeinformations 	= jsonResult.rangeinformations;
 				self.top10informations	= jsonResult.top10informations;
 				$scope.chartRange 			= JSON.parse(jsonResult.chartRange);
@@ -444,10 +604,9 @@ appCommand.controller('TimeTrackerController',
 				$scope.chartRepartitionWork			= JSON.parse(jsonResult.chartRepartitionWork);
 				})
 			  .error( function error( result ) {
-				$('#refreshTimeTracker').show();
-				$('#collectTimeTrackerwait').hide();
+				 self.inprogress=false;
 				self.errormessage = 'error during getInfo';		
-				alert('Error on TimeTracker');				
+				// alert('Error on TimeTracker');				
 				}
 			);  
    
@@ -456,21 +615,36 @@ appCommand.controller('TimeTrackerController',
 		this.getstate  = function ()
 		{
 			var self = this;
+			self.inprogress=true;
+			
 			$http.get( '?page=custompage_longboard&action=timetrackerservicestate')
 			  .success(function success(jsonResult) {	
 
 				console.log('receive ',jsonResult);
+				self.inprogress=false;
 				self.startedstate = jsonResult.isregistered;
 				self.startedmsg = jsonResult.startedmsg;
 				self.errormessage = jsonResult.errormessage;
 				})
 			  .error( function error( result ) {
+				self.inprogress=false;
 				self.errormessage = 'error during getState';		
 				
 				}
 			);  
 			};
-		this.getstate();
+		
+			this.display={  'numberperpage':100, 'pagenumber':1, 'totallines':0 };
+			
+			this.getPageResult = function()
+			{
+				var linedeb = (this.display.pagenumber-1) * parseInt(this.display.numberperpage);
+				var lineend = linedeb + parseInt(this.display.numberperpage);
+				var result = this.allrecords.slice(linedeb, lineend);
+				console.log("lineDeb="+linedeb+", to "+lineend+" result="+result.length);
+				
+				return result;
+			}
 	});
 	
 
@@ -484,16 +658,15 @@ appCommand.controller('ServerParamController',
 	function ($scope,$http) {
 		this.CustompageDebug=false;
 		this.PersistencehibernateEnableWordSearch='';
-		$('#collectserverparambtn').show();
-		$('#collectserverparamwait').hide();
+		this.inprogress=false;
 
 	
 		this.refresh = function()
 		{	
-			$('#collectserverparambtn').hide();
-			$('#collectserverparamwait').show();
+			this.inprogress=true;
 
 			var self = this;
+			self.inprogress=true;
 			$http.get( '?page=custompage_longboard&action=serverparams')
 			  .success(function success(jsonResult) {	
 				console.log('receive ',jsonResult);
@@ -501,18 +674,15 @@ appCommand.controller('ServerParamController',
 				self.errormessage 							= jsonResult.errormessage;
 				
 				self.PersistencehibernateEnableWordSearch = jsonResult.PersistencehibernateEnableWordSearch;
-				$('#collectserverparambtn').show();
-				$('#collectserverparamwait').hide();
+				self.inprogress=false;
 				})
 			  .error( function error( result ) {
 				self.errormessage = 'error during getInfo';								
-				$('#collectserverparambtn').show();
-				$('#collectserverparamwait').hide();
+				self.inprogress=false;
 				}
 			);  
    
 		}
-		this.refresh();
 		
 	});
 		
@@ -526,8 +696,6 @@ appCommand.controller('ServerParamController',
 			
 appCommand.controller('MonitorProcessController', 
 	function ($scope,$http) {
-		$('#collectProcessesbtn').show();
-		$('#collectProcessesWait').hide();
 		this.alldetails=true;
 		this.processes = [ ];
 		this.isshowlegend=false;
@@ -536,6 +704,7 @@ appCommand.controller('MonitorProcessController',
 		this.defaultWarningNbTasks=0;
 		this.activityPeriodInMn=120;
 		this.defaultmaxitems=1000;
+		this.inprogress = false;
 		
 		this.showlegend = function( show )
 		{
@@ -544,9 +713,7 @@ appCommand.controller('MonitorProcessController',
 		this.refresh = function()
 		{	
 		
-			$('#collectProcessesbtn').hide();
-			$('#collectProcessesWait').show();
-
+			
 			var postMsg = {
 					defaultWarningNearbyTasks: this.defaultWarningNearbyTasks,
 					defaultWarningNbOverflowTasks: this.defaultWarningNbOverflowTasks,
@@ -559,21 +726,20 @@ appCommand.controller('MonitorProcessController',
 			
 			
 			var self = this;
+			self.inprogress = true;
+			
 			$http.get( '?page=custompage_longboard&action=monitoringprocess&paramjson='+ angular.toJson(postMsg, true))
 			  .success(function success(jsonResult) {	
 				console.log('receive ',jsonResult);
 				self.processes 						= jsonResult.processes;
 				self.errormessage 					= jsonResult.errormessage;
-
+				self.inprogress = false;
 				console.log(self.processes);
-				$('#collectProcessesbtn').show();
-				$('#collectProcessesWait').hide();
 				})
 			  .error( function error( result ) {
 				self.errormessage = 'error during getInfo';								
-				$('#collectProcessesbtn').show();
-				$('#collectProcessesWait').hide();
-				}
+				self.inprogress = false;
+			  }
 			);  
    
 		};

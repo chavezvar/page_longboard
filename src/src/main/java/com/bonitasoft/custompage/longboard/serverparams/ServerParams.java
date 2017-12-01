@@ -21,52 +21,52 @@ import org.bonitasoft.engine.search.AbstractSearchEntity;
 
 public class ServerParams {
 
-    public static HashMap<String, Object> getServerParamsInfo(APISession apiSession) {
-        Logger logger = Logger.getLogger("org.bonitasoft");
+	public static HashMap<String, Object> getServerParamsInfo(APISession apiSession) {
+		Logger logger = Logger.getLogger("org.bonitasoft");
 
-        HashMap<String, Object> serverParams = new HashMap<String, Object>();
-        TenantServiceAccessor tenantServiceAccessor;
-        serverParams.put("errormessage", "");
-        try {
-            tenantServiceAccessor = ServiceAccessorFactory.getInstance().createTenantServiceAccessor(apiSession.getTenantId());
+		HashMap<String, Object> serverParams = new HashMap<String, Object>();
+		TenantServiceAccessor tenantServiceAccessor;
+		serverParams.put("errormessage", "");
+		try {
+			tenantServiceAccessor = ServiceAccessorFactory.getInstance().createTenantServiceAccessor(apiSession.getTenantId());
 
-            ConsoleProperties consoleProperties = PropertiesFactory.getConsoleProperties(apiSession.getTenantId());
-            serverParams.put("CustompageDebug", consoleProperties.getProperty(ConsoleProperties.CUSTOM_PAGE_DEBUG));
+			ConsoleProperties consoleProperties = PropertiesFactory.getConsoleProperties(apiSession.getTenantId());
+			serverParams.put("CustompageDebug", consoleProperties.getProperty(ConsoleProperties.CUSTOM_PAGE_DEBUG));
 
-            tenantServiceAccessor = ServiceAccessorFactory.getInstance().createTenantServiceAccessor(apiSession.getTenantId());
+			tenantServiceAccessor = ServiceAccessorFactory.getInstance().createTenantServiceAccessor(apiSession.getTenantId());
 
-            serverParams.put("PersistencehibernateEnableWordSearch", "not implemented");
+			serverParams.put("PersistencehibernateEnableWordSearch", "not implemented");
 
-            // the word enable is a propertie of an
-            // AbstractDBPersistenceService.
-            // How get an AbstractDBPersistenceService ? Using a
-            // tenantServiceAccessor, we access interface. Implementation uses
-            // service, but they get it at constructor and don't expose them.
-            // AbstractDBPersistenceService tenantPersistenceService;
-            // tenantPersistenceService.isWordSearchEnabled(AbstractSearchEntity.class);
+			// the word enable is a propertie of an
+			// AbstractDBPersistenceService.
+			// How get an AbstractDBPersistenceService ? Using a
+			// tenantServiceAccessor, we access interface. Implementation uses
+			// service, but they get it at constructor and don't expose them.
+			// AbstractDBPersistenceService tenantPersistenceService;
+			// tenantPersistenceService.isWordSearchEnabled(AbstractSearchEntity.class);
 
-        } catch (Exception e) {
-            serverParams.put("errormessage", "Error (" + e.toString() + "]");
-        }
-        logger.info("ServerParam return " + serverParams.toString());
+		} catch (Exception e) {
+			serverParams.put("errormessage", "Error (" + e.toString() + "]");
+		}
+		logger.info("ServerParam return " + serverParams.toString());
 
-        return serverParams;
-    }
+		return serverParams;
+	}
 
-    /**
-     * @param status
-     * @param apiSession
-     * @return
-     */
-    public static String setCustomePageDebug(boolean status, APISession apiSession) {
-        ConsoleProperties consoleProperties = PropertiesFactory.getConsoleProperties(apiSession.getTenantId());
-        try {
-            consoleProperties.setProperty(ConsoleProperties.CUSTOM_PAGE_DEBUG, status ? "true" : "false");
-            return "statusChange";
-        } catch (IOException e) {
-            return "Error on change";
-        }
+	/**
+	 * @param status
+	 * @param apiSession
+	 * @return
+	 */
+	public static String setCustomePageDebug(boolean status, APISession apiSession) {
+		ConsoleProperties consoleProperties = PropertiesFactory.getConsoleProperties(apiSession.getTenantId());
+		try {
+			consoleProperties.setProperty(ConsoleProperties.CUSTOM_PAGE_DEBUG, status ? "true" : "false");
+			return "statusChange";
+		} catch (IOException e) {
+			return "Error on change";
+		}
 
-    }
+	}
 
 }
