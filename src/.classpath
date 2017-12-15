@@ -27,5 +27,15 @@
 	<classpathentry kind="lib" path="C:/atelier/BPM-SP-6.5.1/workspace/tomcat/webapps/bonita/WEB-INF/lib/bonita-client-sp-6.5.1.jar"/>
 	<classpathentry kind="lib" path="C:/atelier/BPM-SP-6.5.1/workspace/tomcat/webapps/bonita/WEB-INF/lib/console-common-6.5.1.jar"/>
 	<classpathentry kind="lib" path="C:/atelier/BPM-SP-6.5.1/workspace/tomcat/webapps/bonita/WEB-INF/lib/bonita-common-sp-6.5.1.jar"/>
+	<classpathentry excluding="**" kind="src" output="target/classes" path="src/main/resources">
+		<attributes>
+			<attribute name="maven.pomderived" value="true"/>
+		</attributes>
+	</classpathentry>
+	<classpathentry excluding="**" kind="src" output="target/test-classes" path="src/test/resources">
+		<attributes>
+			<attribute name="maven.pomderived" value="true"/>
+		</attributes>
+	</classpathentry>
 	<classpathentry kind="output" path="target/classes"/>
 </classpath>
