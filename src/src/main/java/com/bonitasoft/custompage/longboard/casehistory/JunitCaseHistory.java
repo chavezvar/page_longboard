@@ -8,7 +8,6 @@ import java.util.List;
 import java.util.Map;
 
 import org.bonitasoft.engine.api.ApiAccessType;
-import org.bonitasoft.engine.api.BusinessDataAPI;
 import org.bonitasoft.engine.api.CommandAPI;
 import org.bonitasoft.engine.api.IdentityAPI;
 import org.bonitasoft.engine.api.LoginAPI;
@@ -44,10 +43,10 @@ public class JunitCaseHistory {
 			loginAPI = TenantAPIAccessor.getLoginAPI();
 			// log in to the tenant to create a session
 			final APISession session = loginAPI.login(username, password);
-			final ProcessAPI processAPI = TenantAPIAccessor.getProcessAPI(session);
-			final IdentityAPI identityAPI = TenantAPIAccessor.getIdentityAPI(session);
-			final CommandAPI commandAPI = TenantAPIAccessor.getCommandAPI(session);
-			BusinessDataAPI businessDataAPI = TenantAPIAccessor.getBusinessDataAPI(session);
+			//final ProcessAPI processAPI = TenantAPIAccessor.getProcessAPI(session);
+			//final IdentityAPI identityAPI = TenantAPIAccessor.getIdentityAPI(session);
+			//final CommandAPI commandAPI = TenantAPIAccessor.getCommandAPI(session);
+
 
 			final File commandFile = new File("target/CustomPageLongBoard-1.0.1.jar");
 			FileInputStream fis;

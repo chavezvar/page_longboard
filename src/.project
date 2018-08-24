@@ -22,6 +22,41 @@
 	</natures>
 	<linkedResources>
 		<link>
+			<name>custompage/180817 7.6.0/index.html</name>
+			<type>1</type>
+			<locationURI>PARENT-5-PROJECT_LOC/bonita/BPM-SP-7.7.3/workspace/tomcat/server/temp/bonita_portal_27416@Dragon-Pierre-Yves/tenants/1/pages/custompage_longboard/index.html</locationURI>
+		</link>
+		<link>
+			<name>custompage/180819 7.7.3/Actions.groovy</name>
+			<type>1</type>
+			<locationURI>PARENT-5-PROJECT_LOC/bonita/BPM-SP-7.7.3/workspace/tomcat/server/temp/bonita_portal_55240@Dragon-Pierre-Yves/tenants/1/pages/custompage_longboard/Actions.groovy</locationURI>
+		</link>
+		<link>
+			<name>custompage/180819 7.7.3/index.html</name>
+			<type>1</type>
+			<locationURI>PARENT-5-PROJECT_LOC/bonita/BPM-SP-7.7.3/workspace/tomcat/server/temp/bonita_portal_55240@Dragon-Pierre-Yves/tenants/1/pages/custompage_longboard/index.html</locationURI>
+		</link>
+		<link>
+			<name>custompage/180819 7.7.3/longboardmonitor.js</name>
+			<type>1</type>
+			<locationURI>PARENT-5-PROJECT_LOC/bonita/BPM-SP-7.7.3/workspace/tomcat/server/temp/bonita_portal_55240@Dragon-Pierre-Yves/tenants/1/pages/custompage_longboard/resources/longboardmonitor.js</locationURI>
+		</link>
+		<link>
+			<name>custompage/180823 7.7.3/Actions.groovy</name>
+			<type>1</type>
+			<locationURI>PARENT-5-PROJECT_LOC/bonita/BPM-SP-7.7.3/workspace/tomcat/server/temp/bonita_portal_17124@Dragon-Pierre-Yves/tenants/1/pages/custompage_longboard/Actions.groovy</locationURI>
+		</link>
+		<link>
+			<name>custompage/180823 7.7.3/index.html</name>
+			<type>1</type>
+			<locationURI>PARENT-5-PROJECT_LOC/bonita/BPM-SP-7.7.3/workspace/tomcat/server/temp/bonita_portal_17124@Dragon-Pierre-Yves/tenants/1/pages/custompage_longboard/index.html</locationURI>
+		</link>
+		<link>
+			<name>custompage/180823 7.7.3/longboardmonitor.js</name>
+			<type>1</type>
+			<locationURI>PARENT-5-PROJECT_LOC/bonita/BPM-SP-7.7.3/workspace/tomcat/server/temp/bonita_portal_17124@Dragon-Pierre-Yves/tenants/1/pages/custompage_longboard/resources/longboardmonitor.js</locationURI>
+		</link>
+		<link>
 			<name>custompage/7.2.4 Auckland 4/Actions.groovy</name>
 			<type>1</type>
 			<locationURI>PARENT-5-PROJECT_LOC/bonita/BPM-SP-7.2.4-c/workspace/Auckland%204/bonita_home/client/tenants/1/work/pages/custompage_longboard/Actions.groovy</locationURI>

@@ -31,8 +31,11 @@ public class ServerParams {
 			tenantServiceAccessor = ServiceAccessorFactory.getInstance().createTenantServiceAccessor(apiSession.getTenantId());
 
 			ConsoleProperties consoleProperties = PropertiesFactory.getConsoleProperties(apiSession.getTenantId());
-			serverParams.put("CustompageDebug", consoleProperties.getProperty(ConsoleProperties.CUSTOM_PAGE_DEBUG));
-
+			for (Object key : consoleProperties.getProperties().entrySet())
+			{
+			    // serverParams.put("CustompageDebug", consoleProperties.getProperty(ConsoleProperties.CUSTOM_PAGE_DEBUG));
+			    serverParams.put(key.toString(), consoleProperties.getProperty(key.toString()));
+			}
 			tenantServiceAccessor = ServiceAccessorFactory.getInstance().createTenantServiceAccessor(apiSession.getTenantId());
 
 			serverParams.put("PersistencehibernateEnableWordSearch", "not implemented");
@@ -61,9 +64,10 @@ public class ServerParams {
 	public static String setCustomePageDebug(boolean status, APISession apiSession) {
 		ConsoleProperties consoleProperties = PropertiesFactory.getConsoleProperties(apiSession.getTenantId());
 		try {
-			consoleProperties.setProperty(ConsoleProperties.CUSTOM_PAGE_DEBUG, status ? "true" : "false");
+			// consoleProperties.setProperty(ConsoleProperties.CUSTOM_PAGE_DEBUG, status ? "true" : "false");
+		    
 			return "statusChange";
-		} catch (IOException e) {
+		} catch (Exception e) {
 			return "Error on change";
 		}
 

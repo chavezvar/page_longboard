@@ -47,11 +47,13 @@
 <body ng-app="longboardmonitor">
 
 
+<!--  Page Directory: @_PAGEDIRECTORY_@ -->
+
 <div class="bs-component"  ng-controller="MainController as mainctrl">
 
 	<center>
 	<table><tr><td><h1>Long board</h1></td><td rowspan="2"><img src="pageResource?page=custompage_longboard&location=img/longboard.jpg" width="150" heigth="150" /></td></tr>
-		<tr><td style="font-size:0.8em"> <a href="" ng-click="mainctrl.showhistory( ! mainctrl.isshowhistory )">V3.0</a></td></tr>
+		<tr><td style="font-size:0.8em"> <a href="" ng-click="mainctrl.showhistory( ! mainctrl.isshowhistory )">V3.1</a></td></tr>
 		<tr><td>
 		<div id="showHistory" ng-show="mainctrl.isshowhistory" style="border-width:2px;border-style:ridge;border-color:blue">
 		1.0 First version<br>
@@ -64,6 +66,7 @@
 		2.1 Bonita V7 integration
 		2.2 Run in a Living application
 		3.0 Case History Retry, Update timer, send message and timer
+		3.1 Avoid cache page too strong / display subprocess variable
 		</td></tr>
 		</div>
 	</table>
@@ -209,7 +212,7 @@
 						<tr ng-repeat="activity in histctrl.casehistory.actives track by $index">
 							<td>{{activity.humanActivityDateSt}}</td>	
 							<td>{{activity.activityName}}</td>
-							<td>{{activity.activityId}}</td>
+							<td>{{activity.activityIdDesc}}</td>
 							<td>{{activity.jobIsStillSchedule}}</td>
 							<td>{{activity.isTerminal}}</td>
 							<td>{{activity.type}}</td>
@@ -247,7 +250,7 @@
 						<tr ng-repeat="activity in histctrl.casehistory.activities track by $index">
 							<td style="{{histctrl.getStyleActivity(activity)}}">{{activity.humanActivityDateSt}}</td>
 							<td style="{{histctrl.getStyleActivity(activity)}}">{{activity.activityName}}</td>
-							<td style="{{histctrl.getStyleActivity(activity)}}">{{activity.activityId}}</td>
+							<td style="{{histctrl.getStyleActivity(activity)}}">{{activity.activityIdDesc}}</td>
 							<td style="{{histctrl.getStyleActivity(activity)}}">{{activity.perimeter}}</td>
 							<td style="{{histctrl.getStyleActivity(activity)}}">{{activity.jobIsStillSchedule}} {{activity.jobScheduleDate}}</td>
 							<td style="{{histctrl.getStyleActivity(activity)}}">{{activity.isTerminal}}</td>
@@ -275,7 +278,7 @@
 						<tr ng-repeat="scheduletimer in histctrl.casehistory.timers track by $index">
 							<!--  <td>{{scheduletimer.jobName}}</td> -->
 							<td>{{scheduletimer.activityName}}</td>
-							<td>{{scheduletimer.activityId}}</td>
+							<td>{{scheduletimer.activityIdDesc}}</td>
 							<td>{{scheduletimer.jobIsStillSchedule}}</td>
 							<td>{{scheduletimer.timerDate}}</td>
 							<td> 
@@ -371,44 +374,68 @@
 					<div google-chart chart="chartTimeline" id="chartTimeline" style="height: 400px; width: 100%; position: relative; "></div>
 			
 					<h2><button ng-click="histctrl.showcasehistory()" ng-disabled="histctrl.historyinprogress" class="btn btn-info btn-xs"><span class="glyphicon glyphicon-refresh"></span></button>Variables</h2>
+					<input  type="checkbox" ng-model="histctrl.param.showArchivedData"  />Show Archived data &nbsp;&nbsp;&nbsp;
+					<input  type="checkbox" ng-model="histctrl.param.showProcessData"  />Show Process data &nbsp;&nbsp;&nbsp;
+					<input  type="checkbox" ng-model="histctrl.param.showLocalData"  />Show Local data &nbsp;&nbsp;&nbsp;
+					<input  type="checkbox" ng-model="histctrl.param.showBdmData"  />Show BDM data &nbsp;&nbsp;&nbsp;
 					<table class="table table-striped table-hover table-condensed">
 						<tr>
-							<th class="tabletitle" style="background-color:#fcf8e3">Variable Name</th>
+							<th class="tabletitle" style="background-color:#fcf8e3" ng-show="histctrl.param.showSubProcess">Process</th>
+							<th class="tabletitle" style="background-color:#fcf8e3" ng-show="histctrl.param.showSubProcess">Version</th>
+							<th class="tabletitle" style="background-color:#fcf8e3" ng-show="histctrl.param.showSubProcess">Process id</th>	
+							<th class="tabletitle" style="background-color:#fcf8e3">Context</th>	
+							<th class="tabletitle" style="background-color:#fcf8e3">Scope</th>						
+							<th class="tabletitle" style="background-color:#fcf8e3">Name</th>
 							<th class="tabletitle" style="background-color:#fcf8e3">Description</th>
 							<th class="tabletitle" style="background-color:#fcf8e3">Value</th>
 							<th class="tabletitle" style="background-color:#fcf8e3">Type</th>	
+							<th class="tabletitle" style="background-color:#fcf8e3">Archived</th>	
+							<th class="tabletitle" style="background-color:#fcf8e3">Date</th>	
 						</tr>
-						<tr ng-repeat="variable in histctrl.casehistory.variables track by $index">
-							<td>{{variable.name}}</td>
-							<td>{{variable.description}}</td>
-							<td>{{variable.value}}</td>
-							<td>{{variable.type}}</td>
+						<tbody ng-repeat="variable in histctrl.casehistory.variables track by $index">
+						<tr ng-show="histctrl.isShowVariable(variable)">
+							<td ng-show="histctrl.param.showSubProcess" style="{{histctrl.getStyleActif(variable)}}">{{variable.processname}}</td>
+							<td ng-show="histctrl.param.showSubProcess" style="{{histctrl.getStyleActif(variable)}}">{{variable.processversion}}</td>
+							<td ng-show="histctrl.param.showSubProcess" style="{{histctrl.getStyleActif(variable)}}">{{variable.processinstance}}</td>
+							<td style="{{histctrl.getStyleActif(variable)}}">{{variable.contextinfo}}</td>
+							<td style="{{histctrl.getStyleActif(variable)}}">{{variable.scope}}</td>
+							<td style="{{histctrl.getStyleActif(variable)}}">{{variable.name}}</td>
+							<td style="{{histctrl.getStyleActif(variable)}}">{{variable.description}}</td>
+							<td style="{{histctrl.getStyleActif(variable)}}">{{variable.value}}</td>
+							<td style="{{histctrl.getStyleActif(variable)}}">{{variable.type}}</td>
+							<td style="{{histctrl.getStyleActif(variable)}}">{{variable.status}}</td>
+							<td style="{{histctrl.getStyleActif(variable)}}">{{variable.datearchived | date:'medium' }}</td>
 						</tr>
+						</tbody>
 					</table>
 					
-					<h2><button ng-click="histctrl.showcasehistory()" ng-disabled="histctrl.historyinprogress" class="btn btn-info btn-xs"><span class="glyphicon glyphicon-refresh"></span></button>Archived Variables</h2>
-					Show Archived data <input  type="checkbox" ng-model="histctrl.param.showArchivedData"  />
-					
+					<!--  processinstance -->
+					<h2><button ng-click="histctrl.showcasehistory()" ng-disabled="histctrl.historyinprogress" class="btn btn-info btn-xs"><span class="glyphicon glyphicon-refresh"></span></button>Process Instances</h2>
 					<table class="table table-striped table-hover table-condensed">
 						<tr>
-							<th class="tabletitle" style="background-color:#fcf8e3">Date</th>
-							<th class="tabletitle" style="background-color:#fcf8e3">containerId</th>
-							<th class="tabletitle" style="background-color:#fcf8e3">sourceId</th>
-							<th class="tabletitle" style="background-color:#fcf8e3">Variable Name</th>
-							<th class="tabletitle" style="background-color:#fcf8e3">Description</th>
-							<th class="tabletitle" style="background-color:#fcf8e3">Value</th>
-							<th class="tabletitle" style="background-color:#fcf8e3">Type</th>	
+							<th class="tabletitle" style="background-color:#fcf8e3">Process Instance</th>
+							<th class="tabletitle" style="background-color:#fcf8e3">Process Name</th>
+							<th class="tabletitle" style="background-color:#fcf8e3">Process Version</th>
+							
+							<th class="tabletitle" style="background-color:#fcf8e3">Parent Activity</th>
+							<th class="tabletitle" style="background-color:#fcf8e3">Parent processInstance</th>
+							<th class="tabletitle" style="background-color:#fcf8e3">Parent process name</th>
+							<th class="tabletitle" style="background-color:#fcf8e3">Parent process version</th>
+							<th class="tabletitle" style="background-color:#fcf8e3">Status</th>
 						</tr>
-						<tr ng-repeat="variable in histctrl.casehistory.archivedvariables track by $index">
-							<td>{{variable.archiveDate}}</td>
-							<td>{{variable.containerId}}</td>
-							<td>{{variable.sourceId}}</td>
-							<td>{{variable.name}}</td>
-							<td>{{variable.description}}</td>
-							<td>{{variable.value}}</td>
-							<td>{{variable.type}}</td>
+							
+						<tr ng-repeat="processintance in histctrl.casehistory.processintances track by $index">
+							<td style="{{histctrl.getStyleActif(processintance)}}">{{processintance.id}}</td>
+							<td style="{{histctrl.getStyleActif(processintance)}}">{{processintance.processname}}</td>
+							<td style="{{histctrl.getStyleActif(processintance)}}">{{processintance.processversion}}</td>
+							<td style="{{histctrl.getStyleActif(processintance)}}">{{processintance.parentact}}</td>
+							<td style="{{histctrl.getStyleActif(processintance)}}">{{processintance.parentid}}</td>
+							<td style="{{histctrl.getStyleActif(processintance)}}">{{processintance.parentprocessname}}</td>
+							<td style="{{histctrl.getStyleActif(processintance)}}">{{processintance.parentprocessversion}}</td>
+							<td style="{{histctrl.getStyleActif(processintance)}}">{{processintance.status}}</td>
 						</tr>
 					</table>
+												
 					<h2><button ng-click="histctrl.showcasehistory()" ng-disabled="histctrl.historyinprogress" class="btn btn-info btn-xs"><span class="glyphicon glyphicon-refresh"></span></button>Documents</h2>
 					<table class="table table-striped table-hover table-condensed">
 						<tr>
@@ -989,7 +1016,7 @@
 
 
 <!-- Application dependencies -->
-<script src="pageResource?page=custompage_longboard&location=longboardmonitor.js"></script>
+<script src="pageResource?page=custompage_longboard&location=longboardmonitor.js&v=@_CURRENTTIMEMILIS_@"></script>
 
 </body>
 </html>		

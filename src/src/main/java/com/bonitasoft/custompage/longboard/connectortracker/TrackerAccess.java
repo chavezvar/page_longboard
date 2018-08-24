@@ -786,7 +786,7 @@ private void decodeLine(String completeLine, String[] lineHeader,List<Record> li
 		return Integer.toString(i);
 	}
 
-	public static TimeTracker getTimeTracker(APISession apiSession) throws BonitaHomeNotSetException, BonitaHomeConfigurationException, NoSuchMethodException, InstantiationException, IllegalAccessException, InvocationTargetException, SBonitaException, IOException {
+	public static TimeTracker getTimeTracker(APISession apiSession) throws Exception {
 		TenantServiceAccessor tenantServiceAccessor = ServiceAccessorFactory.getInstance().createTenantServiceAccessor(apiSession.getTenantId());
 
 		final TimeTracker timeTracker = tenantServiceAccessor.getTimeTracker();

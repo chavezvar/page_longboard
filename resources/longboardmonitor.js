@@ -79,7 +79,7 @@ appCommand.controller('ShowHistoryController',
 		this.synthesis = [];
 		this.TimerListEvents =[];
 		
-		this.param = {'caseId':0, 'showSubProcess':true};
+		this.param = {'caseId':0, 'showSubProcess':true, 'showProcessData':true, 'showLocalData':true,'showBdmData':true,'showArchivedData':false};
 
 		// alert('init getActivity '+myActivityHistory+'');
 
@@ -96,7 +96,7 @@ appCommand.controller('ShowHistoryController',
 			self.historyinprogress=true;
 			var json= encodeURI( angular.toJson(self.param, true));
 
-			var url='?page=custompage_longboard&action=casehistory&paramjson='+json;
+			var url='?page=custompage_longboard&action=casehistory&paramjson='+json+'&t='+Date.now();
 										
 			$http.get( url )
 				.success( function ( jsonResult ) {								
@@ -126,7 +126,7 @@ appCommand.controller('ShowHistoryController',
 			self.historyinprogress=true;
 			var json= encodeURI( angular.toJson(self.param, true));
 
-			var url='?page=custompage_longboard&action=searchbyindex&paramjson='+json;
+			var url='?page=custompage_longboard&action=searchbyindex&paramjson='+json+'&t='+Date.now();
 										
 			$http.get( url )
 				.success( function ( jsonResult ) {								
@@ -159,6 +159,29 @@ appCommand.controller('ShowHistoryController',
 			
 			return "n";
 		}
+		this.isShowVariable = function( variable )
+		{
+			var result=true;
+			// is the scope is acceptable?
+			if (variable.scope === 'PROCESS' && !  this.param.showProcessData)
+				result= false;
+			if (variable.scope === 'LOCAL' && !  this.param.showLocalData)
+				result= false;
+			if (variable.scope === 'BDM' && !  this.param.showBdmData)
+				result= false;
+			// actif ?
+			if (variable.status=='ARCHIVED' && ! this.param.showArchivedData)
+				result= false;
+
+			console.log(" ShowVariable "+variable.name+" scope["+variable.scope+"] Status["+variable.status+"] showProcessData? "+this.param.showProcessData+" showLocalData?"+this.param.showLocalData+" showBdmData?"+this.param.showBdmData+" archived?"+this.param.showArchivedData)
+			return result;
+		}
+		this.getStyleActif = function( item )
+		{
+			if (item.status=='ACTIF')
+				return "background-color: #dff0d8";
+			return "";
+		}
 		// -------------------------------------------------
 		// CancelCase
 		// -------------------------------------------------
@@ -169,7 +192,7 @@ appCommand.controller('ShowHistoryController',
 			var self=this;	
 			self.historyinprogress=true;
 			
-			var url='?page=custompage_longboard&action=cancelcase&caseid='+this.caseid;
+			var url='?page=custompage_longboard&action=cancelcase&caseid='+this.caseid+'&t='+Date.now();
 								
 			$http.get( url )
 				.success( function ( jsonResult ) {
@@ -197,7 +220,7 @@ appCommand.controller('ShowHistoryController',
 			var selfactivity=activity;
 			self.historyinprogress=true;
 			
-			var url='?page=custompage_longboard&action=executeactivity&activityid='+activity.activityId;
+			var url='?page=custompage_longboard&action=executeactivity&activityid='+activity.activityId+'&t='+Date.now();
 								
 			$http.get( url )
 				.success( function ( jsonResult ) {
@@ -230,7 +253,7 @@ appCommand.controller('ShowHistoryController',
 			var selfscheduletimer=scheduletimer;
 			var json= encodeURI( angular.toJson(scheduletimer, true));
 
-			var url='?page=custompage_longboard&action=updatetimer&paramjson='+json;
+			var url='?page=custompage_longboard&action=updatetimer&paramjson='+json+'&t='+Date.now();
 								
 			$http.get( url )
 				.success( function ( jsonResult ) {
@@ -262,7 +285,7 @@ appCommand.controller('ShowHistoryController',
 			var selfsignal=signal;
 			var json= encodeURI( angular.toJson(signal, true));
 
-			var url='?page=custompage_longboard&action=sendsignal&paramjson='+json;
+			var url='?page=custompage_longboard&action=sendsignal&paramjson='+json+'&t='+Date.now();
 								
 			$http.get( url )
 				.success( function ( jsonResult ) {
@@ -291,7 +314,7 @@ appCommand.controller('ShowHistoryController',
 			var selfmessage=message;
 			var json= encodeURI( angular.toJson(message, true));
 
-			var url='?page=custompage_longboard&action=sendmessage&paramjson='+json;
+			var url='?page=custompage_longboard&action=sendmessage&paramjson='+json+'&t='+Date.now();
 								
 			$http.get( url )
 				.success( function ( jsonResult ) {
@@ -376,7 +399,7 @@ appCommand.controller('MonitoringController',
 			var self = this;
 			self.inprogress=true;
 				
-			$http.get( '?page=custompage_longboard&action=monitoringapi')
+			$http.get( '?page=custompage_longboard&action=monitoringapi&t='+Date.now())
 			 .success(function success(jsonResult) {	
 
 								console.log('receive ',jsonResult);
@@ -465,7 +488,7 @@ appCommand.controller('PerformanceController',
 			var self = this;
 			self.inprogress=true;
 			
-			var url ='?page=custompage_longboard&action=testperf';
+			var url ='?page=custompage_longboard&action=testperf&t='+Date.now();
 			url = url + '&runbonitahometest='+this.runbonitahometest;
 			url = url + '&rundatabasetest='+this.rundatabasetest;
 			url = url + '&runprocesstest='+this.runprocesstest;
@@ -563,7 +586,7 @@ appCommand.controller('TimeTrackerController',
 			// alert('runService '+start);
 			var self = this;
 			self.inprogress=true;
-			$http.get( '?page=custompage_longboard&action=timetrackerservice&start='+start)
+			$http.get( '?page=custompage_longboard&action=timetrackerservice&start='+start+'&t='+Date.now())
 			  .success(function success(jsonResult) {	
 				console.log('receive ',jsonResult);
 				self.inprogress=false;
@@ -584,7 +607,7 @@ appCommand.controller('TimeTrackerController',
 
 			var self = this;
 			self.inprogress=true;
-			$http.get( '?page=custompage_longboard&action=timetrackergetinfos&issimulation='+self.issimulation+'&showallinformations='+this.showallinformations+'&rangedisplayinhour='+this.rangedisplayinhour+"&rangedisplayDuration="+this.showrangeDuration+"&rangedisplayMaximum="+this.showrangeMaximum)
+			$http.get( '?page=custompage_longboard&action=timetrackergetinfos&issimulation='+self.issimulation+'&showallinformations='+this.showallinformations+'&rangedisplayinhour='+this.rangedisplayinhour+"&rangedisplayDuration="+this.showrangeDuration+"&rangedisplayMaximum="+this.showrangeMaximum+'&t='+Date.now())
 			  .success(function success(jsonResult) {	
 				self.inprogress=false;
 				self.isinitstate=true; // consider now we have the status
@@ -667,7 +690,7 @@ appCommand.controller('ServerParamController',
 
 			var self = this;
 			self.inprogress=true;
-			$http.get( '?page=custompage_longboard&action=serverparams')
+			$http.get( '?page=custompage_longboard&action=serverparams&t='+Date.now())
 			  .success(function success(jsonResult) {	
 				console.log('receive ',jsonResult);
 				self.CustompageDebug 						= jsonResult.CustompageDebug;
@@ -728,7 +751,7 @@ appCommand.controller('MonitorProcessController',
 			var self = this;
 			self.inprogress = true;
 			
-			$http.get( '?page=custompage_longboard&action=monitoringprocess&paramjson='+ angular.toJson(postMsg, true))
+			$http.get( '?page=custompage_longboard&action=monitoringprocess&paramjson='+ angular.toJson(postMsg, true)+'&t='+Date.now())
 			  .success(function success(jsonResult) {	
 				console.log('receive ',jsonResult);
 				self.processes 						= jsonResult.processes;

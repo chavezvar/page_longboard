@@ -10,25 +10,25 @@
 		<dependency>
 			<groupId>org.bonitasoft.engine</groupId>
 			<artifactId>bonita-client</artifactId>
-			<version>7.2.4</version>
+			<version>7.6.0</version>
 		</dependency>
 		<dependency>
 			<groupId>org.bonitasoft.engine</groupId>
 			<artifactId>bonita-server</artifactId>
-			<version>7.2.4</version>
+			<version>7.6.0</version>
 		</dependency>
 		<!--  to load it :  -->
-		<!-- mvn install:install-file -Dfile=console-common-7.2.4.jar -DgroupId=org.bonitasoft.console -DartifactId=console-common -Dversion=7.2.4 -Dpackaging=jar -->
+		<!-- mvn install:install-file -Dfile=console-common-7.6.0.jar -DgroupId=org.bonitasoft.console -DartifactId=console-common -Dversion=7.6.0 -Dpackaging=jar -->
 		<dependency>
 			<groupId>org.bonitasoft.console</groupId>
 			<artifactId>console-common</artifactId>
-			<version>7.2.4</version>
+			<version>7.6.0</version>
 		</dependency>
-		<!-- mvn install:install-file -Dfile=>bonita-common-sp-7.2.4.jar -DgroupId=com.bonitasoft.engine -DartifactId=bonita-common-sp -Dversion=7.2.4 -Dpackaging=jar -->
+		<!-- mvn install:install-file -Dfile=>bonita-common-sp-7.6.0.jar -DgroupId=com.bonitasoft.engine -DartifactId=bonita-common-sp -Dversion=7.6.0 -Dpackaging=jar -->
 		<dependency>
 			<groupId>com.bonitasoft.engine</groupId>
 			<artifactId>bonita-common-sp</artifactId>
-			<version>7.2.4</version>
+			<version>7.6.0</version>
 		</dependency>
 		<dependency>
         	<groupId>com.bonitasoft.log.event</groupId>
