@@ -1104,14 +1104,7 @@ public class CaseHistory {
         return value;
     }
 
-    private void test(ProcessAPI processAPI) {
-        /*
-         * processAPI. Date updateExecutionDateOfTimerEventTriggerInstance(long
-         * timerEventTriggerInstanceId, Date executionDate) throws
-         * TimerEventTriggerInstanceNotFoundException, UpdateException;
-         * searchTimerEventTriggerInstances
-         */
-    }
+   
 
     /*
      * *************************************************************************
@@ -1185,7 +1178,7 @@ public class CaseHistory {
 
         message += "Registering...";
         final CommandDescriptor commandDescriptor = commandAPI.register(commandName, commandDescription, className);
-
+        logger.fine(loggerLabel+"deployTimerCommand:"+message);
         return commandDescriptor;
     }
 
@@ -1194,7 +1187,7 @@ public class CaseHistory {
      * 
      * @param listHistoryJson
      */
-    private static List<Map<String, Object>> getTimerByCommand(long processInstanceId,
+    protected static List<Map<String, Object>> getTimerByCommand(long processInstanceId,
             List<Map<String, Object>> listHistoryJson, boolean forceDeployCommand, final InputStream inputStreamJarFile,
             CommandAPI commandAPI) {
         try {
@@ -1217,10 +1210,12 @@ public class CaseHistory {
                 // resultCommandHashmap.get(CmdGetTimer.cstResultExpl));
                 // complete the list by searching in all activities base on the
                 // flowNodeId
+                @SuppressWarnings("unchecked")
                 List<Map<String, Object>> listTimerByCommand = (List<Map<String, Object>>) resultCommandHashmap
                         .get(CmdGetTimer.cstResultListEvents);
 
                 for (final Map<String, Object> eventTimer : listTimerByCommand) {
+                    @SuppressWarnings("unchecked")
                     final Map<String, Object> hashJobParameters = (HashMap<String, Object>) eventTimer
                             .get(CmdGetTimer.cstResultEventJobParam);
                     final Long targerSflownodeDefinition = hashJobParameters == null ? null
@@ -1275,6 +1270,7 @@ public class CaseHistory {
             parameters.put(CmdGetTimer.cstParamCommand, CmdGetTimer.cstCommandSetTimer);
 
             final Serializable resultCommand = commandAPI.execute(command.getId(), parameters);
+            @SuppressWarnings("unchecked")
             final HashMap<String, Object> resultCommandHashmap = (HashMap<String, Object>) resultCommand;
             if (resultCommandHashmap == null) {
                 logger.info("#### Timer : Can't access the command");
@@ -1414,7 +1410,7 @@ public class CaseHistory {
              * @param processDefinition
              * @param processId
              */
-            private static void completeListDataInstanceMap( List<Map<String, Object>>  listDataInstanceMap, ScopeVariable scopeVariable,StatusVariable statusVariable, List listDataInstances, ProcessDefinition processDefinition, Long processId,String contextInfo  )
+            private static void completeListDataInstanceMap( List<Map<String, Object>>  listDataInstanceMap, ScopeVariable scopeVariable,StatusVariable statusVariable, List<?> listDataInstances, ProcessDefinition processDefinition, Long processId,String contextInfo  )
             {
             for (Object dataInstance : listDataInstances) {
                 Map<String, Object> mapDataInstance = new HashMap<String, Object>();
@@ -1842,6 +1838,7 @@ public class CaseHistory {
             // now we get a listStorageIds
             try {
                 String classDAOName = businessDataReference.getType() + "DAO";
+                @SuppressWarnings("rawtypes")
                 Class classDao = Class.forName(classDAOName);
                 if (classDao == null) {
                     // a problem here...
@@ -1861,6 +1858,7 @@ public class CaseHistory {
                     // JsonSlurper().parseText(jsonSt);
 
                     if (collectListBdm != null) {
+                        @SuppressWarnings("unchecked")
                         List<Object> collectList = (List<Object>) collectListBdm;
                         collectList.add(jsonSt);
                     } else {
