@@ -22,6 +22,26 @@
 	</natures>
 	<linkedResources>
 		<link>
+			<name>custompage/0-Native/Actions.groovy</name>
+			<type>1</type>
+			<locationURI>PARENT-1-PROJECT_LOC/Actions.groovy</locationURI>
+		</link>
+		<link>
+			<name>custompage/0-Native/Index.groovy</name>
+			<type>1</type>
+			<locationURI>PARENT-1-PROJECT_LOC/Index.groovy</locationURI>
+		</link>
+		<link>
+			<name>custompage/0-Native/index.html</name>
+			<type>1</type>
+			<locationURI>PARENT-1-PROJECT_LOC/index.html</locationURI>
+		</link>
+		<link>
+			<name>custompage/0-Native/longboardmonitor.js</name>
+			<type>1</type>
+			<locationURI>PARENT-1-PROJECT_LOC/resources/longboardmonitor.js</locationURI>
+		</link>
+		<link>
 			<name>custompage/180817 7.6.0/index.html</name>
 			<type>1</type>
 			<locationURI>PARENT-5-PROJECT_LOC/bonita/BPM-SP-7.7.3/workspace/tomcat/server/temp/bonita_portal_27416@Dragon-Pierre-Yves/tenants/1/pages/custompage_longboard/index.html</locationURI>
