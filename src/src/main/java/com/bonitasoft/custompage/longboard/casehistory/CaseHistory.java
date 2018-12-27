@@ -253,9 +253,14 @@ public class CaseHistory {
         logger.info("############### start caseDetail v1.2 on [" + caseHistoryParameter.caseId + "] ShowSubProcess["
                 + caseHistoryParameter.showSubProcess + "]");
 
-        final Map<String, Object> caseDetails = new HashMap<String, Object>();
+        
+        final Map<String, Object> caseDetails = new HashMap<String, Object>();        
         caseDetails.put("errormessage", "");
         try {
+          
+           
+          
+          
             SearchOptionsBuilder searchOptionsBuilder;
             final ProcessAPI processAPI = TenantAPIAccessor.getProcessAPI(apiSession);
             final IdentityAPI identityAPI = TenantAPIAccessor.getIdentityAPI(apiSession);
@@ -266,6 +271,13 @@ public class CaseHistory {
                 caseDetails.put("errormessage", "Give a caseId");
                 return caseDetails;
             }
+            
+            
+            ProcessInstanceList loadAllprocessInstances = loadProcessInstances(caseHistoryParameter.caseId, caseHistoryParameter.showSubProcess, processAPI);
+            
+            
+            
+            // ---------------------------- Activities
             final List<Map<String, Object>> listActivities = new ArrayList<Map<String, Object>>();
             // keep the list of FlownodeId returned: the event should return the
             // same ID and then it's necessary to merge them
@@ -278,18 +290,8 @@ public class CaseHistory {
             // MULTI_INSTANCE_ACTIVITY / completed
             final Set<Long> listMultiInstanceActivity = new HashSet<Long>();
 
-            searchOptionsBuilder = new SearchOptionsBuilder(0, 1000);
-            if (caseHistoryParameter.showSubProcess) {
-                searchOptionsBuilder.filter(ArchivedFlowNodeInstanceSearchDescriptor.PARENT_PROCESS_INSTANCE_ID,
-                        caseHistoryParameter.caseId);
-                // bug : not working
-                // searchOptionsBuilder.filter(ArchivedFlowNodeInstanceSearchDescriptor.ROOT_PROCESS_INSTANCE_ID,
-                // caseHistoryParameter.caseId);
-            } else {
-                searchOptionsBuilder.filter(ArchivedFlowNodeInstanceSearchDescriptor.PARENT_PROCESS_INSTANCE_ID,
-                        caseHistoryParameter.caseId);
-            }
-
+            
+            // Active tasks
             searchOptionsBuilder = new SearchOptionsBuilder(0, 1000);
             // searchOptionsBuilder.filter(ActivityInstanceSearchDescriptor.PROCESS_INSTANCE_ID,
             // processInstanceId);
@@ -304,8 +306,7 @@ public class CaseHistory {
 
             // SearchResult<ActivityInstance> searchActivity =
             // processAPI.searchActivities(searchOptionsBuilder.done());
-            final SearchResult<FlowNodeInstance> searchFlowNode = processAPI
-                    .searchFlowNodeInstances(searchOptionsBuilder.done());
+            final SearchResult<FlowNodeInstance> searchFlowNode = processAPI.searchFlowNodeInstances(searchOptionsBuilder.done());
             if (searchFlowNode.getCount() == 0) {
                 // caseDetails.put("errormessage", "No activities found");
             }
@@ -366,159 +367,175 @@ public class CaseHistory {
             }
             logger.info("#### casehistory on processInstanceId[" + caseHistoryParameter.caseId + "] : found ["
                     + listActivities.size() + "] activity");
-            // ------------------- archived
-            searchOptionsBuilder = new SearchOptionsBuilder(0, 1000);
-            if (caseHistoryParameter.showSubProcess) {
-                searchOptionsBuilder.filter(ArchivedFlowNodeInstanceSearchDescriptor.PARENT_PROCESS_INSTANCE_ID,
-                        caseHistoryParameter.caseId);
-                // bug : not working
-                // searchOptionsBuilder.filter(ArchivedFlowNodeInstanceSearchDescriptor.ROOT_PROCESS_INSTANCE_ID,
-                // caseHistoryParameter.caseId);
-            } else {
-                searchOptionsBuilder.filter(ArchivedFlowNodeInstanceSearchDescriptor.PARENT_PROCESS_INSTANCE_ID,
-                        caseHistoryParameter.caseId);
+            
+            
+            // ------------------- archived   
+            // Attention, same activity will be returned multiple time
+            Set<Long> setActivitiesRetrieved = new HashSet<Long>();
+            for ( Long processInstanceId : loadAllprocessInstances.listIds)
+            {
+              
+              searchOptionsBuilder = new SearchOptionsBuilder(0, 1000);
+              if (caseHistoryParameter.showSubProcess) {
+                  searchOptionsBuilder.filter(ArchivedFlowNodeInstanceSearchDescriptor.PARENT_PROCESS_INSTANCE_ID,
+                      processInstanceId);
+                  // bug : not working
+                  // searchOptionsBuilder.filter(ArchivedFlowNodeInstanceSearchDescriptor.ROOT_PROCESS_INSTANCE_ID,
+                  // caseHistoryParameter.caseId);
+              } else {
+                  searchOptionsBuilder.filter(ArchivedFlowNodeInstanceSearchDescriptor.PARENT_PROCESS_INSTANCE_ID,
+                      processInstanceId);
+              }
+  
+              final SearchResult<ArchivedFlowNodeInstance> searchActivityArchived;
+              searchActivityArchived = processAPI.searchArchivedFlowNodeInstances(searchOptionsBuilder.done());
+              for (final ArchivedFlowNodeInstance activityInstance : searchActivityArchived.getResult()) {
+                if (setActivitiesRetrieved.contains(activityInstance.getId()))
+                  continue;
+                setActivitiesRetrieved.add(activityInstance.getId());
+                
+                  final HashMap<String, Object> mapActivity = new HashMap<String, Object>();
+                  mapActivity.put(cstPerimeter, cstPerimeter_V_ARCHIVED);
+                  mapActivity.put(cstActivityName, activityInstance.getName());
+                  mapActivity.put(cstActivityId, activityInstance.getId());
+                  mapActivity.put(cstActivitySourceId, activityInstance.getSourceObjectId()); 
+                  mapActivity.put( cstActivityIdDesc, activityInstance.getSourceObjectId()+" ( "+activityInstance.getId()+")");
+                  mapActivity.put(cstActivityDescription, activityInstance.getDescription());
+                  mapActivity.put(cstActivityDisplayDescription, activityInstance.getDisplayDescription());
+  
+                  final Date date = activityInstance.getArchiveDate();
+                  mapActivity.put(cstActivityDate, date.getTime());
+                  mapActivity.put(cstActivityDateHuman, getDisplayDate(date));
+                  mapActivity.put(cstActivityIsTerminal, activityInstance.isTerminal() ? "Terminal" : "");
+                  mapActivity.put(cstActivityType, activityInstance.getType().toString());
+                  mapActivity.put(cstActivityState, activityInstance.getState().toString());
+                  mapActivity.put(cstActivityFlownodeDefId, activityInstance.getFlownodeDefinitionId());
+                  mapActivity.put("parentactivityid", activityInstance.getParentActivityInstanceId());
+                  mapActivity.put(cstActivityParentContainer, activityInstance.getParentContainerId());
+                  mapActivity.put(cstActivitySourceObjectId, activityInstance.getSourceObjectId());
+                  mapActivity.put(cstActivityExpl,
+                          "FlowNode :" + activityInstance.getFlownodeDefinitionId() + "] ParentActivityInstanceId["
+                                  + activityInstance.getParentActivityInstanceId() + "] ParentContainer["
+                                  + activityInstance.getParentContainerId() + "] RootContainer["
+                                  + activityInstance.getRootContainerId() + "] Source["
+                                  + activityInstance.getSourceObjectId() + "]");
+  
+                  if (activityInstance.getExecutedBy() != 0) {
+                      try {
+                          final User user = identityAPI.getUser(activityInstance.getExecutedBy());
+  
+                          final String userExecuted = (user != null ? user.getUserName() : "unknow") + " ("
+                                  + activityInstance.getExecutedBy() + ")";
+                          mapActivity.put("ExecutedBy", userExecuted);
+                      } catch (final UserNotFoundException ue) {
+                          mapActivity.put("ExecutedBy", "UserNotFound id=" + activityInstance.getExecutedBy());
+                          caseDetails.put("errormessage", "UserNotFound id=" + activityInstance.getExecutedBy());
+  
+                      } ;
+                  }
+                  logger.info("#### casehistory Activity[" + mapActivity + "]");
+  
+                  listActivities.add(mapActivity);
+                  mapActivities.put(activityInstance.getId(), mapActivity);
+  
+              }
             }
-
-            final SearchResult<ArchivedFlowNodeInstance> searchActivityArchived = processAPI
-                    .searchArchivedFlowNodeInstances(searchOptionsBuilder.done());
-            for (final ArchivedFlowNodeInstance activityInstance : searchActivityArchived.getResult()) {
-
-                final HashMap<String, Object> mapActivity = new HashMap<String, Object>();
-                mapActivity.put(cstPerimeter, cstPerimeter_V_ARCHIVED);
-                mapActivity.put(cstActivityName, activityInstance.getName());
-                mapActivity.put(cstActivityId, activityInstance.getId());
-                mapActivity.put(cstActivitySourceId, activityInstance.getSourceObjectId()); 
-                mapActivity.put( cstActivityIdDesc, activityInstance.getSourceObjectId()+" ( "+activityInstance.getId()+")");
-                mapActivity.put(cstActivityDescription, activityInstance.getDescription());
-                mapActivity.put(cstActivityDisplayDescription, activityInstance.getDisplayDescription());
-
-                final Date date = activityInstance.getArchiveDate();
-                mapActivity.put(cstActivityDate, date.getTime());
-                mapActivity.put(cstActivityDateHuman, getDisplayDate(date));
-                mapActivity.put(cstActivityIsTerminal, activityInstance.isTerminal() ? "Terminal" : "");
-                mapActivity.put(cstActivityType, activityInstance.getType().toString());
-                mapActivity.put(cstActivityState, activityInstance.getState().toString());
-                mapActivity.put(cstActivityFlownodeDefId, activityInstance.getFlownodeDefinitionId());
-                mapActivity.put("parentactivityid", activityInstance.getParentActivityInstanceId());
-                mapActivity.put(cstActivityParentContainer, activityInstance.getParentContainerId());
-                mapActivity.put(cstActivitySourceObjectId, activityInstance.getSourceObjectId());
-                mapActivity.put(cstActivityExpl,
-                        "FlowNode :" + activityInstance.getFlownodeDefinitionId() + "] ParentActivityInstanceId["
-                                + activityInstance.getParentActivityInstanceId() + "] ParentContainer["
-                                + activityInstance.getParentContainerId() + "] RootContainer["
-                                + activityInstance.getRootContainerId() + "] Source["
-                                + activityInstance.getSourceObjectId() + "]");
-
-                if (activityInstance.getExecutedBy() != 0) {
-                    try {
-                        final User user = identityAPI.getUser(activityInstance.getExecutedBy());
-
-                        final String userExecuted = (user != null ? user.getUserName() : "unknow") + " ("
-                                + activityInstance.getExecutedBy() + ")";
-                        mapActivity.put("ExecutedBy", userExecuted);
-                    } catch (final UserNotFoundException ue) {
-                        mapActivity.put("ExecutedBy", "UserNotFound id=" + activityInstance.getExecutedBy());
-                        caseDetails.put("errormessage", "UserNotFound id=" + activityInstance.getExecutedBy());
-
-                    } ;
-                }
-                logger.info("#### casehistory Activity[" + mapActivity + "]");
-
-                listActivities.add(mapActivity);
-                mapActivities.put(activityInstance.getId(), mapActivity);
-
-            }
-
             // ------------------------------ events
             List<Map<String, Object>> listSignals = new ArrayList<Map<String, Object>>();
             List<Map<String, Object>> listMessages = new ArrayList<Map<String, Object>>();
-
-            final List<EventInstance> listEventInstance = processAPI.getEventInstances(caseHistoryParameter.caseId, 0,
-                    1000, EventCriterion.NAME_ASC);
-            for (final EventInstance eventInstance : listEventInstance) {
-                Map<String, Object> mapActivity = null;
-                if (mapActivities.containsKey(eventInstance.getId()))
-                    mapActivity = mapActivities.get(eventInstance.getId());
-                else {
-                    mapActivity = new HashMap<String, Object>();
-                    listActivities.add(mapActivity);
-                    mapActivity.put(cstPerimeter, "ARCHIVED");
-                    mapActivity.put(cstActivityName, eventInstance.getName());
-                    mapActivity.put(cstActivityId, eventInstance.getId());
-                    mapActivity.put(cstActivityIdDesc, eventInstance.getId());
-
-                    mapActivity.put(cstActivityDescription, eventInstance.getDescription());
-                    mapActivity.put(cstActivityDisplayDescription, eventInstance.getDisplayDescription());
-                    mapActivity.put(cstActivityIsTerminal, "");
-
-                }
-
-                Date date = eventInstance.getLastUpdateDate();
-                if (date != null) {
-                    mapActivity.put(cstActivityDate, date.getTime());
-                    mapActivity.put(cstActivityDateHuman, getDisplayDate(date));
-                }
-                mapActivity.put(cstActivityType, eventInstance.getType().toString());
-                mapActivity.put(cstActivityState, eventInstance.getState().toString());
-                mapActivity.put(cstActivityFlownodeDefId, eventInstance.getFlownodeDefinitionId());
-                mapActivity.put(cstActivityParentContainer, eventInstance.getParentContainerId());
-
-                mapActivity.put(cstActivityExpl,
-                        "EventInstance :" + eventInstance.getFlownodeDefinitionId() + "] ParentContainer["
-                                + eventInstance.getParentContainerId() + "] RootContainer["
-                                + eventInstance.getRootContainerId() + "]");
-
-                DesignProcessDefinition designProcessDefinition = processAPI
-                        .getDesignProcessDefinition(eventInstance.getProcessDefinitionId());
-                FlowElementContainerDefinition flowElementContainerDefinition = designProcessDefinition
-                        .getFlowElementContainer();
-                FlowNodeDefinition flowNodeDefinition = flowElementContainerDefinition
-                        .getFlowNode(eventInstance.getFlownodeDefinitionId());
-                if (flowNodeDefinition instanceof CatchEventDefinition) {
-                    CatchEventDefinition catchEventDefinition = (CatchEventDefinition) flowNodeDefinition;
-                    if (catchEventDefinition.getSignalEventTriggerDefinitions() != null) {
-                        SignalOperations.collectSignals(catchEventDefinition, eventInstance, listSignals);
-
-                    } // end signal detection
-                    if (catchEventDefinition.getMessageEventTriggerDefinitions() != null) {
-                        MessageOperations.collectMessage(catchEventDefinition, eventInstance, listMessages);
-
-                    } // end message detection
-                }
-                // ActivityDefinition activityDefinition= processAPI.getDef
-                // CatchEventDefinition.getSignalEventTriggerDefinitions().getSignalName()
+            for ( Long processInstanceId : loadAllprocessInstances.listIds)
+            {
+              final List<EventInstance> listEventInstance = processAPI.getEventInstances(processInstanceId, 0,
+                      1000, EventCriterion.NAME_ASC);
+              for (final EventInstance eventInstance : listEventInstance) {
+                  Map<String, Object> mapActivity = null;
+                  if (mapActivities.containsKey(eventInstance.getId()))
+                      mapActivity = mapActivities.get(eventInstance.getId());
+                  else {
+                      mapActivity = new HashMap<String, Object>();
+                      listActivities.add(mapActivity);
+                      mapActivity.put(cstPerimeter, "ARCHIVED");
+                      mapActivity.put(cstActivityName, eventInstance.getName());
+                      mapActivity.put(cstActivityId, eventInstance.getId());
+                      mapActivity.put(cstActivityIdDesc, eventInstance.getId());
+  
+                      mapActivity.put(cstActivityDescription, eventInstance.getDescription());
+                      mapActivity.put(cstActivityDisplayDescription, eventInstance.getDisplayDescription());
+                      mapActivity.put(cstActivityIsTerminal, "");
+  
+                  }
+  
+                  Date date = eventInstance.getLastUpdateDate();
+                  if (date != null) {
+                      mapActivity.put(cstActivityDate, date.getTime());
+                      mapActivity.put(cstActivityDateHuman, getDisplayDate(date));
+                  }
+                  mapActivity.put(cstActivityType, eventInstance.getType().toString());
+                  mapActivity.put(cstActivityState, eventInstance.getState().toString());
+                  mapActivity.put(cstActivityFlownodeDefId, eventInstance.getFlownodeDefinitionId());
+                  mapActivity.put(cstActivityParentContainer, eventInstance.getParentContainerId());
+  
+                  mapActivity.put(cstActivityExpl,
+                          "EventInstance :" + eventInstance.getFlownodeDefinitionId() + "] ParentContainer["
+                                  + eventInstance.getParentContainerId() + "] RootContainer["
+                                  + eventInstance.getRootContainerId() + "]");
+  
+                  DesignProcessDefinition designProcessDefinition = processAPI
+                          .getDesignProcessDefinition(eventInstance.getProcessDefinitionId());
+                  FlowElementContainerDefinition flowElementContainerDefinition = designProcessDefinition
+                          .getFlowElementContainer();
+                  FlowNodeDefinition flowNodeDefinition = flowElementContainerDefinition
+                          .getFlowNode(eventInstance.getFlownodeDefinitionId());
+                  if (flowNodeDefinition instanceof CatchEventDefinition) {
+                      CatchEventDefinition catchEventDefinition = (CatchEventDefinition) flowNodeDefinition;
+                      if (catchEventDefinition.getSignalEventTriggerDefinitions() != null) {
+                          SignalOperations.collectSignals(catchEventDefinition, eventInstance, listSignals);
+  
+                      } // end signal detection
+                      if (catchEventDefinition.getMessageEventTriggerDefinitions() != null) {
+                          MessageOperations.collectMessage(catchEventDefinition, eventInstance, listMessages);
+  
+                      } // end message detection
+                  }
+                  // ActivityDefinition activityDefinition= processAPI.getDef
+                  // CatchEventDefinition.getSignalEventTriggerDefinitions().getSignalName()
+              }
             }
             caseDetails.put("signals", listSignals);
             caseDetails.put("messages", listMessages);
 
             // -------------------------------------------- search the timer
-            SearchResult<TimerEventTriggerInstance> searchTimer = processAPI.searchTimerEventTriggerInstances(
-                    caseHistoryParameter.caseId, new SearchOptionsBuilder(0, 100).done());
             List<Map<String, Object>> listTimers = new ArrayList<Map<String, Object>>();
-            if (searchTimer.getResult() != null)
-                for (TimerEventTriggerInstance triggerInstance : searchTimer.getResult()) {
-                    Map<String, Object> eventTimer = new HashMap<String, Object>();
-
-                    eventTimer.put(cstActivityJobIsStillSchedule, "Yes");
-                    eventTimer.put(cstTriggerId, triggerInstance.getId());
-                    eventTimer.put(cstActivityId, triggerInstance.getEventInstanceId());
-                    eventTimer.put(cstActivityIdDesc, triggerInstance.getEventInstanceId());
-                    eventTimer.put(cstActivityName, triggerInstance.getEventInstanceName());
-                    eventTimer.put(cstActivityTimerDate, triggerInstance.getExecutionDate() == null ? ""
-                            : sdf.format(triggerInstance.getExecutionDate()));
-
-                    // update the activity : a timer is still active
-                    if (mapActivities.containsKey(triggerInstance.getEventInstanceId())) {
-                        Map<String, Object> mapActivity = mapActivities.get(triggerInstance.getEventInstanceId());
-                        mapActivity.put(cstActivityJobIsStillSchedule, "Yes");
-                        mapActivity.put(cstActivityJobScheduleDate, triggerInstance.getExecutionDate() == null ? ""
-                                : sdf.format(triggerInstance.getExecutionDate()));
-                        mapActivity.put(cstTriggerId, triggerInstance.getExecutionDate() == null ? ""
-                                : sdf.format(triggerInstance.getExecutionDate()));
-
-                    }
-                    listTimers.add(eventTimer);
-                }
+            for ( Long processInstanceId : loadAllprocessInstances.listIds)
+            {
+         
+              SearchResult<TimerEventTriggerInstance> searchTimer = processAPI.searchTimerEventTriggerInstances(
+                  processInstanceId, new SearchOptionsBuilder(0, 100).done());
+              if (searchTimer.getResult() != null)
+                  for (TimerEventTriggerInstance triggerInstance : searchTimer.getResult()) {
+                      Map<String, Object> eventTimer = new HashMap<String, Object>();
+  
+                      eventTimer.put(cstActivityJobIsStillSchedule, "Yes");
+                      eventTimer.put(cstTriggerId, triggerInstance.getId());
+                      eventTimer.put(cstActivityId, triggerInstance.getEventInstanceId());
+                      eventTimer.put(cstActivityIdDesc, triggerInstance.getEventInstanceId());
+                      eventTimer.put(cstActivityName, triggerInstance.getEventInstanceName());
+                      eventTimer.put(cstActivityTimerDate, triggerInstance.getExecutionDate() == null ? ""
+                              : sdf.format(triggerInstance.getExecutionDate()));
+  
+                      // update the activity : a timer is still active
+                      if (mapActivities.containsKey(triggerInstance.getEventInstanceId())) {
+                          Map<String, Object> mapActivity = mapActivities.get(triggerInstance.getEventInstanceId());
+                          mapActivity.put(cstActivityJobIsStillSchedule, "Yes");
+                          mapActivity.put(cstActivityJobScheduleDate, triggerInstance.getExecutionDate() == null ? ""
+                                  : sdf.format(triggerInstance.getExecutionDate()));
+                          mapActivity.put(cstTriggerId, triggerInstance.getExecutionDate() == null ? ""
+                                  : sdf.format(triggerInstance.getExecutionDate()));
+  
+                      }
+                      listTimers.add(eventTimer);
+                  }
+            }
             /*
              * List<Map<String, Object>> listTimerByCommand =
              * getTimerByCommand(caseHistoryParameter.caseId, listHistoryJson,
@@ -564,7 +581,7 @@ public class CaseHistory {
             logger.info("ACTIVE:" + listActivitiesActives.toString());
 
             // process instance
-            caseDetails.put("processintances", loadProcessInstances(caseHistoryParameter.caseId, caseHistoryParameter.showSubProcess, processAPI));
+            caseDetails.put("processintances", loadAllprocessInstances.listDetails);
 
             // -------------------------------------------- Variables
             List<Map<String, Object>> listDataInstanceMap = new ArrayList<Map<String, Object>>();
@@ -1476,15 +1493,23 @@ public class CaseHistory {
 
 
     /**
-     * load the processinstance declaration
+     * Container for the processInstanceList
+     */
+    public static class ProcessInstanceList
+    {
+      List<Map<String, Object>> listDetails = new ArrayList<Map<String, Object>>();;
+      List<Long> listIds = new ArrayList<Long>();;
+    }
+    /**
+     * load all processinstance declaration
      * @param rootProcessInstanceId
      * @param showSubProcess
      * @param processAPI
      * @return
      */
-    public static List<Map<String, Object>> loadProcessInstances(Long rootProcessInstanceId, boolean showSubProcess,
+    public static ProcessInstanceList loadProcessInstances(Long rootProcessInstanceId, boolean showSubProcess,
             ProcessAPI processAPI) {
-        List<Map<String, Object>> listProcessInstancesMap = new ArrayList<Map<String, Object>>();
+      ProcessInstanceList processInstanceList = new ProcessInstanceList();
 
         List<ProcessInstanceDescription> listProcessInstances = getAllProcessInstance(rootProcessInstanceId,
                 showSubProcess, processAPI);
@@ -1493,7 +1518,9 @@ public class CaseHistory {
                 ProcessDefinition processDefinition = processAPI.getProcessDefinition(processInstanceDescription.processDefinitionId);
 
                 Map<String, Object> processInstanceMap = new HashMap<String, Object>();
-                listProcessInstancesMap.add(processInstanceMap);
+                processInstanceList.listDetails.add(processInstanceMap);
+                processInstanceList.listIds.add(processInstanceDescription.id);
+                
                 processInstanceMap.put("id", processInstanceDescription.id);
 
                 processInstanceMap.put("processname", processDefinition.getName());
@@ -1547,7 +1574,7 @@ public class CaseHistory {
             }
         }
 
-        return listProcessInstancesMap;
+        return processInstanceList;
     }
 
     public static class ProcessInstanceDescription {
