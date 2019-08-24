@@ -10,7 +10,6 @@ import java.sql.Clob;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
-import java.sql.ResultSetMetaData;
 import java.sql.SQLException;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
@@ -43,18 +42,13 @@ import org.bonitasoft.engine.bpm.data.ArchivedDataInstance;
 import org.bonitasoft.engine.bpm.data.DataInstance;
 import org.bonitasoft.engine.bpm.document.Document;
 import org.bonitasoft.engine.bpm.document.DocumentCriterion;
-import org.bonitasoft.engine.bpm.flownode.ActivityDefinition;
 import org.bonitasoft.engine.bpm.flownode.ActivityInstance;
 import org.bonitasoft.engine.bpm.flownode.ActivityInstanceSearchDescriptor;
 import org.bonitasoft.engine.bpm.flownode.ActivityStates;
 import org.bonitasoft.engine.bpm.flownode.ArchivedActivityInstance;
-import org.bonitasoft.engine.bpm.flownode.ArchivedActivityInstanceSearchDescriptor;
 import org.bonitasoft.engine.bpm.flownode.ArchivedFlowNodeInstance;
 import org.bonitasoft.engine.bpm.flownode.ArchivedFlowNodeInstanceSearchDescriptor;
 import org.bonitasoft.engine.bpm.flownode.CatchEventDefinition;
-import org.bonitasoft.engine.bpm.flownode.CatchMessageEventTriggerDefinition;
-import org.bonitasoft.engine.bpm.flownode.CatchSignalEventTriggerDefinition;
-import org.bonitasoft.engine.bpm.flownode.CorrelationDefinition;
 import org.bonitasoft.engine.bpm.flownode.EventCriterion;
 import org.bonitasoft.engine.bpm.flownode.EventInstance;
 import org.bonitasoft.engine.bpm.flownode.FlowElementContainerDefinition;
@@ -62,17 +56,13 @@ import org.bonitasoft.engine.bpm.flownode.FlowNodeDefinition;
 import org.bonitasoft.engine.bpm.flownode.FlowNodeInstance;
 import org.bonitasoft.engine.bpm.flownode.FlowNodeInstanceSearchDescriptor;
 import org.bonitasoft.engine.bpm.flownode.GatewayInstance;
-import org.bonitasoft.engine.bpm.flownode.IntermediateCatchEventInstance;
 import org.bonitasoft.engine.bpm.flownode.TimerEventTriggerInstance;
-import org.bonitasoft.engine.bpm.flownode.TimerEventTriggerInstanceNotFoundException;
 import org.bonitasoft.engine.bpm.process.ArchivedProcessInstance;
 import org.bonitasoft.engine.bpm.process.ArchivedProcessInstanceNotFoundException;
-import org.bonitasoft.engine.bpm.process.ArchivedProcessInstancesSearchDescriptor;
 import org.bonitasoft.engine.bpm.process.DesignProcessDefinition;
 import org.bonitasoft.engine.bpm.process.ProcessDefinition;
 import org.bonitasoft.engine.bpm.process.ProcessInstance;
 import org.bonitasoft.engine.bpm.process.ProcessInstanceNotFoundException;
-import org.bonitasoft.engine.bpm.process.ProcessInstanceSearchDescriptor;
 import org.bonitasoft.engine.business.data.BusinessDataReference;
 import org.bonitasoft.engine.business.data.MultipleBusinessDataReference;
 import org.bonitasoft.engine.business.data.SimpleBusinessDataReference;
@@ -83,17 +73,13 @@ import org.bonitasoft.engine.exception.AlreadyExistsException;
 import org.bonitasoft.engine.exception.CreationException;
 import org.bonitasoft.engine.exception.DeletionException;
 import org.bonitasoft.engine.exception.SearchException;
-import org.bonitasoft.engine.exception.UpdateException;
 import org.bonitasoft.engine.identity.User;
 import org.bonitasoft.engine.identity.UserNotFoundException;
-import org.bonitasoft.engine.operation.Operation;
-import org.bonitasoft.engine.search.SearchOptions;
 import org.bonitasoft.engine.search.SearchOptionsBuilder;
 import org.bonitasoft.engine.search.SearchResult;
-import org.bonitasoft.engine.search.Sort;
-import org.bonitasoft.engine.search.impl.SearchFilter;
 import org.bonitasoft.engine.session.APISession;
-import org.hibernate.persister.entity.Loadable;
+import org.bonitasoft.log.event.BEvent;
+import org.bonitasoft.log.event.BEvent.Level;
 import org.json.simple.JSONValue;
 
 import com.bonitasoft.custompage.longboard.casehistory.CaseGraphDisplay.ActivityTimeLine;
@@ -101,13 +87,13 @@ import com.bonitasoft.custompage.longboard.casehistory.cmdtimer.CmdGetTimer;
 import com.bonitasoft.custompage.longboard.toolbox.LongboardToolbox;
 
 import groovy.json.JsonBuilder;
-import groovy.json.JsonSlurper;
 
 public class CaseHistory {
 
     final static Logger logger = Logger.getLogger(CaseHistory.class.getName());
 
     public static String loggerLabel = "LongBoard ##";
+    private final static BEvent eventNoCaseFound = new BEvent(CaseHistory.class.getName(), 1, Level.APPLICATIONERROR, "No Case found", "The Case does not exist (or it's a SubProcess case)", "No information will be visible", "Give a correct case");
 
     public final static String cstStatus = "status";
     public final static String cstActivityName = "activityName";
@@ -119,7 +105,7 @@ public class CaseHistory {
     public final static String cstPerimeter_V_ARCHIVED = "ARCHIVED";
 
     public final static String cstActivityId = "activityId";
-    public final static String cstActivitySourceId="activitySourceId";
+    public final static String cstActivitySourceId = "activitySourceId";
     public final static String cstActivityIdDesc = "activityIdDesc";
     public final static String cstTriggerId = "triggerid";
     public final static String cstJobName = "jobName";
@@ -157,6 +143,8 @@ public class CaseHistory {
     public final static String cstActivitySignalName = "signalName";
 
     public final static String cstCaseId = "caseId";
+    public final static String cstRootCaseId = "rootCaseId";
+    public final static String cstRealCaseId = "realCaseId";
     public final static String cstCaseProcessInfo = "processInfo";
     public final static String cstCaseStartDateSt = "startDateSt";
 
@@ -250,17 +238,13 @@ public class CaseHistory {
             boolean forceDeployCommand, final InputStream inputStreamJarFile, APISession apiSession) {
 
         // Activities
-        logger.info("############### start caseDetail v1.2 on [" + caseHistoryParameter.caseId + "] ShowSubProcess["
+        logger.info("############### start caseDetail v4.0 on [" + caseHistoryParameter.caseId + "] ShowSubProcess["
                 + caseHistoryParameter.showSubProcess + "]");
 
-        
-        final Map<String, Object> caseDetails = new HashMap<String, Object>();        
+        final Map<String, Object> caseDetails = new HashMap<String, Object>();
         caseDetails.put("errormessage", "");
         try {
-          
-           
-          
-          
+
             SearchOptionsBuilder searchOptionsBuilder;
             final ProcessAPI processAPI = TenantAPIAccessor.getProcessAPI(apiSession);
             final IdentityAPI identityAPI = TenantAPIAccessor.getIdentityAPI(apiSession);
@@ -271,12 +255,12 @@ public class CaseHistory {
                 caseDetails.put("errormessage", "Give a caseId");
                 return caseDetails;
             }
-            
-            
+
             ProcessInstanceList loadAllprocessInstances = loadProcessInstances(caseHistoryParameter.caseId, caseHistoryParameter.showSubProcess, processAPI);
-            
-            
-            
+
+            if (loadAllprocessInstances.listIds.size() == 0) {
+                caseDetails.put("errormessage", "No root case Id with this ID");
+            }
             // ---------------------------- Activities
             final List<Map<String, Object>> listActivities = new ArrayList<Map<String, Object>>();
             // keep the list of FlownodeId returned: the event should return the
@@ -290,7 +274,6 @@ public class CaseHistory {
             // MULTI_INSTANCE_ACTIVITY / completed
             final Set<Long> listMultiInstanceActivity = new HashSet<Long>();
 
-            
             // Active tasks
             searchOptionsBuilder = new SearchOptionsBuilder(0, 1000);
             // searchOptionsBuilder.filter(ActivityInstanceSearchDescriptor.PROCESS_INSTANCE_ID,
@@ -367,174 +350,170 @@ public class CaseHistory {
             }
             logger.info("#### casehistory on processInstanceId[" + caseHistoryParameter.caseId + "] : found ["
                     + listActivities.size() + "] activity");
-            
-            
+
             // ------------------- archived   
             // Attention, same activity will be returned multiple time
             Set<Long> setActivitiesRetrieved = new HashSet<Long>();
-            for ( Long processInstanceId : loadAllprocessInstances.listIds)
-            {
-              
-              searchOptionsBuilder = new SearchOptionsBuilder(0, 1000);
-              if (caseHistoryParameter.showSubProcess) {
-                  searchOptionsBuilder.filter(ArchivedFlowNodeInstanceSearchDescriptor.PARENT_PROCESS_INSTANCE_ID,
-                      processInstanceId);
-                  // bug : not working
-                  // searchOptionsBuilder.filter(ArchivedFlowNodeInstanceSearchDescriptor.ROOT_PROCESS_INSTANCE_ID,
-                  // caseHistoryParameter.caseId);
-              } else {
-                  searchOptionsBuilder.filter(ArchivedFlowNodeInstanceSearchDescriptor.PARENT_PROCESS_INSTANCE_ID,
-                      processInstanceId);
-              }
-  
-              final SearchResult<ArchivedFlowNodeInstance> searchActivityArchived;
-              searchActivityArchived = processAPI.searchArchivedFlowNodeInstances(searchOptionsBuilder.done());
-              for (final ArchivedFlowNodeInstance activityInstance : searchActivityArchived.getResult()) {
-                if (setActivitiesRetrieved.contains(activityInstance.getId()))
-                  continue;
-                setActivitiesRetrieved.add(activityInstance.getId());
-                
-                  final HashMap<String, Object> mapActivity = new HashMap<String, Object>();
-                  mapActivity.put(cstPerimeter, cstPerimeter_V_ARCHIVED);
-                  mapActivity.put(cstActivityName, activityInstance.getName());
-                  mapActivity.put(cstActivityId, activityInstance.getId());
-                  mapActivity.put(cstActivitySourceId, activityInstance.getSourceObjectId()); 
-                  mapActivity.put( cstActivityIdDesc, activityInstance.getSourceObjectId()+" ( "+activityInstance.getId()+")");
-                  mapActivity.put(cstActivityDescription, activityInstance.getDescription());
-                  mapActivity.put(cstActivityDisplayDescription, activityInstance.getDisplayDescription());
-  
-                  final Date date = activityInstance.getArchiveDate();
-                  mapActivity.put(cstActivityDate, date.getTime());
-                  mapActivity.put(cstActivityDateHuman, getDisplayDate(date));
-                  mapActivity.put(cstActivityIsTerminal, activityInstance.isTerminal() ? "Terminal" : "");
-                  mapActivity.put(cstActivityType, activityInstance.getType().toString());
-                  mapActivity.put(cstActivityState, activityInstance.getState().toString());
-                  mapActivity.put(cstActivityFlownodeDefId, activityInstance.getFlownodeDefinitionId());
-                  mapActivity.put("parentactivityid", activityInstance.getParentActivityInstanceId());
-                  mapActivity.put(cstActivityParentContainer, activityInstance.getParentContainerId());
-                  mapActivity.put(cstActivitySourceObjectId, activityInstance.getSourceObjectId());
-                  mapActivity.put(cstActivityExpl,
-                          "FlowNode :" + activityInstance.getFlownodeDefinitionId() + "] ParentActivityInstanceId["
-                                  + activityInstance.getParentActivityInstanceId() + "] ParentContainer["
-                                  + activityInstance.getParentContainerId() + "] RootContainer["
-                                  + activityInstance.getRootContainerId() + "] Source["
-                                  + activityInstance.getSourceObjectId() + "]");
-  
-                  if (activityInstance.getExecutedBy() != 0) {
-                      try {
-                          final User user = identityAPI.getUser(activityInstance.getExecutedBy());
-  
-                          final String userExecuted = (user != null ? user.getUserName() : "unknow") + " ("
-                                  + activityInstance.getExecutedBy() + ")";
-                          mapActivity.put("ExecutedBy", userExecuted);
-                      } catch (final UserNotFoundException ue) {
-                          mapActivity.put("ExecutedBy", "UserNotFound id=" + activityInstance.getExecutedBy());
-                          caseDetails.put("errormessage", "UserNotFound id=" + activityInstance.getExecutedBy());
-  
-                      } ;
-                  }
-                  logger.info("#### casehistory Activity[" + mapActivity + "]");
-  
-                  listActivities.add(mapActivity);
-                  mapActivities.put(activityInstance.getId(), mapActivity);
-  
-              }
+            for (Long processInstanceId : loadAllprocessInstances.listIds) {
+
+                searchOptionsBuilder = new SearchOptionsBuilder(0, 1000);
+                if (caseHistoryParameter.showSubProcess) {
+                    searchOptionsBuilder.filter(ArchivedFlowNodeInstanceSearchDescriptor.PARENT_PROCESS_INSTANCE_ID,
+                            processInstanceId);
+                    // bug : not working
+                    // searchOptionsBuilder.filter(ArchivedFlowNodeInstanceSearchDescriptor.ROOT_PROCESS_INSTANCE_ID,
+                    // caseHistoryParameter.caseId);
+                } else {
+                    searchOptionsBuilder.filter(ArchivedFlowNodeInstanceSearchDescriptor.PARENT_PROCESS_INSTANCE_ID,
+                            processInstanceId);
+                }
+
+                final SearchResult<ArchivedFlowNodeInstance> searchActivityArchived;
+                searchActivityArchived = processAPI.searchArchivedFlowNodeInstances(searchOptionsBuilder.done());
+                for (final ArchivedFlowNodeInstance activityInstance : searchActivityArchived.getResult()) {
+                    if (setActivitiesRetrieved.contains(activityInstance.getId()))
+                        continue;
+                    setActivitiesRetrieved.add(activityInstance.getId());
+
+                    final HashMap<String, Object> mapActivity = new HashMap<String, Object>();
+                    mapActivity.put(cstPerimeter, cstPerimeter_V_ARCHIVED);
+                    mapActivity.put(cstActivityName, activityInstance.getName());
+                    mapActivity.put(cstActivityId, activityInstance.getId());
+                    mapActivity.put(cstActivitySourceId, activityInstance.getSourceObjectId());
+                    mapActivity.put(cstActivityIdDesc, activityInstance.getSourceObjectId() + " ( " + activityInstance.getId() + ")");
+                    mapActivity.put(cstActivityDescription, activityInstance.getDescription());
+                    mapActivity.put(cstActivityDisplayDescription, activityInstance.getDisplayDescription());
+
+                    final Date date = activityInstance.getArchiveDate();
+                    mapActivity.put(cstActivityDate, date.getTime());
+                    mapActivity.put(cstActivityDateHuman, getDisplayDate(date));
+                    mapActivity.put(cstActivityIsTerminal, activityInstance.isTerminal() ? "Terminal" : "");
+                    mapActivity.put(cstActivityType, activityInstance.getType().toString());
+                    mapActivity.put(cstActivityState, activityInstance.getState().toString());
+                    mapActivity.put(cstActivityFlownodeDefId, activityInstance.getFlownodeDefinitionId());
+                    mapActivity.put("parentactivityid", activityInstance.getParentActivityInstanceId());
+                    mapActivity.put(cstActivityParentContainer, activityInstance.getParentContainerId());
+                    mapActivity.put(cstActivitySourceObjectId, activityInstance.getSourceObjectId());
+                    mapActivity.put(cstActivityExpl,
+                            "FlowNode :" + activityInstance.getFlownodeDefinitionId() + "] ParentActivityInstanceId["
+                                    + activityInstance.getParentActivityInstanceId() + "] ParentContainer["
+                                    + activityInstance.getParentContainerId() + "] RootContainer["
+                                    + activityInstance.getRootContainerId() + "] Source["
+                                    + activityInstance.getSourceObjectId() + "]");
+
+                    if (activityInstance.getExecutedBy() != 0) {
+                        try {
+                            final User user = identityAPI.getUser(activityInstance.getExecutedBy());
+
+                            final String userExecuted = (user != null ? user.getUserName() : "unknow") + " ("
+                                    + activityInstance.getExecutedBy() + ")";
+                            mapActivity.put("ExecutedBy", userExecuted);
+                        } catch (final UserNotFoundException ue) {
+                            mapActivity.put("ExecutedBy", "UserNotFound id=" + activityInstance.getExecutedBy());
+                            caseDetails.put("errormessage", "UserNotFound id=" + activityInstance.getExecutedBy());
+
+                        } ;
+                    }
+                    logger.info("#### casehistory Activity[" + mapActivity + "]");
+
+                    listActivities.add(mapActivity);
+                    mapActivities.put(activityInstance.getId(), mapActivity);
+
+                }
             }
             // ------------------------------ events
             List<Map<String, Object>> listSignals = new ArrayList<Map<String, Object>>();
             List<Map<String, Object>> listMessages = new ArrayList<Map<String, Object>>();
-            for ( Long processInstanceId : loadAllprocessInstances.listIds)
-            {
-              final List<EventInstance> listEventInstance = processAPI.getEventInstances(processInstanceId, 0,
-                      1000, EventCriterion.NAME_ASC);
-              for (final EventInstance eventInstance : listEventInstance) {
-                  Map<String, Object> mapActivity = null;
-                  if (mapActivities.containsKey(eventInstance.getId()))
-                      mapActivity = mapActivities.get(eventInstance.getId());
-                  else {
-                      mapActivity = new HashMap<String, Object>();
-                      listActivities.add(mapActivity);
-                      mapActivity.put(cstPerimeter, "ARCHIVED");
-                      mapActivity.put(cstActivityName, eventInstance.getName());
-                      mapActivity.put(cstActivityId, eventInstance.getId());
-                      mapActivity.put(cstActivityIdDesc, eventInstance.getId());
-  
-                      mapActivity.put(cstActivityDescription, eventInstance.getDescription());
-                      mapActivity.put(cstActivityDisplayDescription, eventInstance.getDisplayDescription());
-                      mapActivity.put(cstActivityIsTerminal, "");
-  
-                  }
-  
-                  Date date = eventInstance.getLastUpdateDate();
-                  if (date != null) {
-                      mapActivity.put(cstActivityDate, date.getTime());
-                      mapActivity.put(cstActivityDateHuman, getDisplayDate(date));
-                  }
-                  mapActivity.put(cstActivityType, eventInstance.getType().toString());
-                  mapActivity.put(cstActivityState, eventInstance.getState().toString());
-                  mapActivity.put(cstActivityFlownodeDefId, eventInstance.getFlownodeDefinitionId());
-                  mapActivity.put(cstActivityParentContainer, eventInstance.getParentContainerId());
-  
-                  mapActivity.put(cstActivityExpl,
-                          "EventInstance :" + eventInstance.getFlownodeDefinitionId() + "] ParentContainer["
-                                  + eventInstance.getParentContainerId() + "] RootContainer["
-                                  + eventInstance.getRootContainerId() + "]");
-  
-                  DesignProcessDefinition designProcessDefinition = processAPI
-                          .getDesignProcessDefinition(eventInstance.getProcessDefinitionId());
-                  FlowElementContainerDefinition flowElementContainerDefinition = designProcessDefinition
-                          .getFlowElementContainer();
-                  FlowNodeDefinition flowNodeDefinition = flowElementContainerDefinition
-                          .getFlowNode(eventInstance.getFlownodeDefinitionId());
-                  if (flowNodeDefinition instanceof CatchEventDefinition) {
-                      CatchEventDefinition catchEventDefinition = (CatchEventDefinition) flowNodeDefinition;
-                      if (catchEventDefinition.getSignalEventTriggerDefinitions() != null) {
-                          SignalOperations.collectSignals(catchEventDefinition, eventInstance, listSignals);
-  
-                      } // end signal detection
-                      if (catchEventDefinition.getMessageEventTriggerDefinitions() != null) {
-                          MessageOperations.collectMessage(catchEventDefinition, eventInstance, listMessages);
-  
-                      } // end message detection
-                  }
-                  // ActivityDefinition activityDefinition= processAPI.getDef
-                  // CatchEventDefinition.getSignalEventTriggerDefinitions().getSignalName()
-              }
+            for (Long processInstanceId : loadAllprocessInstances.listIds) {
+                final List<EventInstance> listEventInstance = processAPI.getEventInstances(processInstanceId, 0,
+                        1000, EventCriterion.NAME_ASC);
+                for (final EventInstance eventInstance : listEventInstance) {
+                    Map<String, Object> mapActivity = null;
+                    if (mapActivities.containsKey(eventInstance.getId()))
+                        mapActivity = mapActivities.get(eventInstance.getId());
+                    else {
+                        mapActivity = new HashMap<String, Object>();
+                        listActivities.add(mapActivity);
+                        mapActivity.put(cstPerimeter, "ARCHIVED");
+                        mapActivity.put(cstActivityName, eventInstance.getName());
+                        mapActivity.put(cstActivityId, eventInstance.getId());
+                        mapActivity.put(cstActivityIdDesc, eventInstance.getId());
+
+                        mapActivity.put(cstActivityDescription, eventInstance.getDescription());
+                        mapActivity.put(cstActivityDisplayDescription, eventInstance.getDisplayDescription());
+                        mapActivity.put(cstActivityIsTerminal, "");
+
+                    }
+
+                    Date date = eventInstance.getLastUpdateDate();
+                    if (date != null) {
+                        mapActivity.put(cstActivityDate, date.getTime());
+                        mapActivity.put(cstActivityDateHuman, getDisplayDate(date));
+                    }
+                    mapActivity.put(cstActivityType, eventInstance.getType().toString());
+                    mapActivity.put(cstActivityState, eventInstance.getState().toString());
+                    mapActivity.put(cstActivityFlownodeDefId, eventInstance.getFlownodeDefinitionId());
+                    mapActivity.put(cstActivityParentContainer, eventInstance.getParentContainerId());
+
+                    mapActivity.put(cstActivityExpl,
+                            "EventInstance :" + eventInstance.getFlownodeDefinitionId() + "] ParentContainer["
+                                    + eventInstance.getParentContainerId() + "] RootContainer["
+                                    + eventInstance.getRootContainerId() + "]");
+
+                    DesignProcessDefinition designProcessDefinition = processAPI
+                            .getDesignProcessDefinition(eventInstance.getProcessDefinitionId());
+                    FlowElementContainerDefinition flowElementContainerDefinition = designProcessDefinition
+                            .getFlowElementContainer();
+                    FlowNodeDefinition flowNodeDefinition = flowElementContainerDefinition
+                            .getFlowNode(eventInstance.getFlownodeDefinitionId());
+                    if (flowNodeDefinition instanceof CatchEventDefinition) {
+                        CatchEventDefinition catchEventDefinition = (CatchEventDefinition) flowNodeDefinition;
+                        if (catchEventDefinition.getSignalEventTriggerDefinitions() != null) {
+                            SignalOperations.collectSignals(catchEventDefinition, eventInstance, listSignals);
+
+                        } // end signal detection
+                        if (catchEventDefinition.getMessageEventTriggerDefinitions() != null) {
+                            MessageOperations.collectMessage(catchEventDefinition, eventInstance, listMessages);
+
+                        } // end message detection
+                    }
+                    // ActivityDefinition activityDefinition= processAPI.getDef
+                    // CatchEventDefinition.getSignalEventTriggerDefinitions().getSignalName()
+                }
             }
             caseDetails.put("signals", listSignals);
             caseDetails.put("messages", listMessages);
 
             // -------------------------------------------- search the timer
             List<Map<String, Object>> listTimers = new ArrayList<Map<String, Object>>();
-            for ( Long processInstanceId : loadAllprocessInstances.listIds)
-            {
-         
-              SearchResult<TimerEventTriggerInstance> searchTimer = processAPI.searchTimerEventTriggerInstances(
-                  processInstanceId, new SearchOptionsBuilder(0, 100).done());
-              if (searchTimer.getResult() != null)
-                  for (TimerEventTriggerInstance triggerInstance : searchTimer.getResult()) {
-                      Map<String, Object> eventTimer = new HashMap<String, Object>();
-  
-                      eventTimer.put(cstActivityJobIsStillSchedule, "Yes");
-                      eventTimer.put(cstTriggerId, triggerInstance.getId());
-                      eventTimer.put(cstActivityId, triggerInstance.getEventInstanceId());
-                      eventTimer.put(cstActivityIdDesc, triggerInstance.getEventInstanceId());
-                      eventTimer.put(cstActivityName, triggerInstance.getEventInstanceName());
-                      eventTimer.put(cstActivityTimerDate, triggerInstance.getExecutionDate() == null ? ""
-                              : sdf.format(triggerInstance.getExecutionDate()));
-  
-                      // update the activity : a timer is still active
-                      if (mapActivities.containsKey(triggerInstance.getEventInstanceId())) {
-                          Map<String, Object> mapActivity = mapActivities.get(triggerInstance.getEventInstanceId());
-                          mapActivity.put(cstActivityJobIsStillSchedule, "Yes");
-                          mapActivity.put(cstActivityJobScheduleDate, triggerInstance.getExecutionDate() == null ? ""
-                                  : sdf.format(triggerInstance.getExecutionDate()));
-                          mapActivity.put(cstTriggerId, triggerInstance.getExecutionDate() == null ? ""
-                                  : sdf.format(triggerInstance.getExecutionDate()));
-  
-                      }
-                      listTimers.add(eventTimer);
-                  }
+            for (Long processInstanceId : loadAllprocessInstances.listIds) {
+
+                SearchResult<TimerEventTriggerInstance> searchTimer = processAPI.searchTimerEventTriggerInstances(
+                        processInstanceId, new SearchOptionsBuilder(0, 100).done());
+                if (searchTimer.getResult() != null)
+                    for (TimerEventTriggerInstance triggerInstance : searchTimer.getResult()) {
+                        Map<String, Object> eventTimer = new HashMap<String, Object>();
+
+                        eventTimer.put(cstActivityJobIsStillSchedule, "Yes");
+                        eventTimer.put(cstTriggerId, triggerInstance.getId());
+                        eventTimer.put(cstActivityId, triggerInstance.getEventInstanceId());
+                        eventTimer.put(cstActivityIdDesc, triggerInstance.getEventInstanceId());
+                        eventTimer.put(cstActivityName, triggerInstance.getEventInstanceName());
+                        eventTimer.put(cstActivityTimerDate, triggerInstance.getExecutionDate() == null ? ""
+                                : sdf.format(triggerInstance.getExecutionDate()));
+
+                        // update the activity : a timer is still active
+                        if (mapActivities.containsKey(triggerInstance.getEventInstanceId())) {
+                            Map<String, Object> mapActivity = mapActivities.get(triggerInstance.getEventInstanceId());
+                            mapActivity.put(cstActivityJobIsStillSchedule, "Yes");
+                            mapActivity.put(cstActivityJobScheduleDate, triggerInstance.getExecutionDate() == null ? ""
+                                    : sdf.format(triggerInstance.getExecutionDate()));
+                            mapActivity.put(cstTriggerId, triggerInstance.getExecutionDate() == null ? ""
+                                    : sdf.format(triggerInstance.getExecutionDate()));
+
+                        }
+                        listTimers.add(eventTimer);
+                    }
             }
             /*
              * List<Map<String, Object>> listTimerByCommand =
@@ -591,28 +570,25 @@ public class CaseHistory {
             listDataInstanceMap.addAll(loadBdmVariables(caseHistoryParameter.caseId, caseHistoryParameter.showSubProcess, apiSession, businessDataAPI, processAPI));
 
             sortTheList(listDataInstanceMap, "processinstance;name;datearchived");
-            
+
             caseDetails.put("variables", listDataInstanceMap);
 
-         
             // -------------------------------------------- Documents
             List<Map<String, Object>> listDocumentsMap = new ArrayList<Map<String, Object>>();
 
-            
             List<ProcessInstanceDescription> listProcessInstances = getAllProcessInstance(caseHistoryParameter.caseId,
                     caseHistoryParameter.showSubProcess, processAPI);
-            
-            for (ProcessInstanceDescription processInstanceDescription : listProcessInstances)
-            {
+
+            for (ProcessInstanceDescription processInstanceDescription : listProcessInstances) {
                 List<Document> listDocuments = processAPI.getLastVersionOfDocuments(processInstanceDescription.id, 0, 1000,
-                    DocumentCriterion.NAME_ASC);
-                 if (listDocuments != null) {
+                        DocumentCriterion.NAME_ASC);
+                if (listDocuments != null) {
                     for (Document document : listDocuments) {
                         Map<String, Object> documentMap = new HashMap<String, Object>();
                         listDocumentsMap.add(documentMap);
-                        
+
                         ProcessDefinition processDefinition = processAPI.getProcessDefinition(processInstanceDescription.processDefinitionId);
-                        
+
                         documentMap.put("processname", processDefinition.getName());
                         documentMap.put("processversion", processDefinition.getVersion());
                         documentMap.put("processinstance", processInstanceDescription.id);
@@ -1029,35 +1005,24 @@ public class CaseHistory {
             // processInstanceId);
 
             if (caseHistoryParameter.searchIndex1.trim().length() > 0) {
-                searchOptionsBuilder.filter(
-                        com.bonitasoft.engine.bpm.process.impl.ProcessInstanceSearchDescriptor.STRING_INDEX_1,
-                        caseHistoryParameter.searchIndex1);
+                searchOptionsBuilder.filter(com.bonitasoft.engine.bpm.process.impl.ProcessInstanceSearchDescriptor.STRING_INDEX_1, caseHistoryParameter.searchIndex1);
             }
             if (caseHistoryParameter.searchIndex2.trim().length() > 0) {
-                searchOptionsBuilder.filter(
-                        com.bonitasoft.engine.bpm.process.impl.ProcessInstanceSearchDescriptor.STRING_INDEX_2,
-                        caseHistoryParameter.searchIndex2);
+                searchOptionsBuilder.filter(com.bonitasoft.engine.bpm.process.impl.ProcessInstanceSearchDescriptor.STRING_INDEX_2, caseHistoryParameter.searchIndex2);
             }
             if (caseHistoryParameter.searchIndex3.trim().length() > 0) {
-                searchOptionsBuilder.filter(
-                        com.bonitasoft.engine.bpm.process.impl.ProcessInstanceSearchDescriptor.STRING_INDEX_3,
-                        caseHistoryParameter.searchIndex3);
+                searchOptionsBuilder.filter(com.bonitasoft.engine.bpm.process.impl.ProcessInstanceSearchDescriptor.STRING_INDEX_3, caseHistoryParameter.searchIndex3);
             }
             if (caseHistoryParameter.searchIndex4.trim().length() > 0) {
-                searchOptionsBuilder.filter(
-                        com.bonitasoft.engine.bpm.process.impl.ProcessInstanceSearchDescriptor.STRING_INDEX_4,
-                        caseHistoryParameter.searchIndex4);
+                searchOptionsBuilder.filter(com.bonitasoft.engine.bpm.process.impl.ProcessInstanceSearchDescriptor.STRING_INDEX_4, caseHistoryParameter.searchIndex4);
             }
             if (caseHistoryParameter.searchIndex5.trim().length() > 0) {
-                searchOptionsBuilder.filter(
-                        com.bonitasoft.engine.bpm.process.impl.ProcessInstanceSearchDescriptor.STRING_INDEX_5,
-                        caseHistoryParameter.searchIndex5);
+                searchOptionsBuilder.filter(com.bonitasoft.engine.bpm.process.impl.ProcessInstanceSearchDescriptor.STRING_INDEX_5, caseHistoryParameter.searchIndex5);
             }
 
             // SearchResult<ActivityInstance> searchActivity =
             // processAPI.searchActivities(searchOptionsBuilder.done());
-            final SearchResult<ProcessInstance> searchProcessInstance = processAPI
-                    .searchProcessInstances(searchOptionsBuilder.done());
+            final SearchResult<ProcessInstance> searchProcessInstance = processAPI.searchProcessInstances(searchOptionsBuilder.done());
             searchDetails.put("nbcases", searchProcessInstance.getCount());
             if (searchProcessInstance.getCount() == 0) {
                 // caseDetails.put("errormessage", "No activities found");
@@ -1067,18 +1032,20 @@ public class CaseHistory {
                 final HashMap<String, Object> mapCase = new HashMap<String, Object>();
                 listCasesJson.add(mapCase);
                 mapCase.put(cstCaseId, processInstance.getId());
-                final ProcessDefinition processDefinition = processAPI
-                        .getProcessDefinition(processInstance.getProcessDefinitionId());
-                mapCase.put(cstCaseProcessInfo,
-                        processDefinition.getName() + " (" + processDefinition.getVersion() + ")");
-                mapCase.put(cstCaseStartDateSt,
-                        processInstance.getStartDate() == null ? "" : getDisplayDate(processInstance.getStartDate()));
+                final ProcessDefinition processDefinition = processAPI.getProcessDefinition(processInstance.getProcessDefinitionId());
+                mapCase.put(cstCaseProcessInfo, processDefinition.getName() + " (" + processDefinition.getVersion() + ")");
+                mapCase.put(cstCaseStartDateSt, processInstance.getStartDate() == null ? "" : getDisplayDate(processInstance.getStartDate()));
                 mapCase.put("index1", processInstance.getStringIndex1());
                 mapCase.put("index2", processInstance.getStringIndex2());
                 mapCase.put("index3", processInstance.getStringIndex3());
                 mapCase.put("index4", processInstance.getStringIndex4());
                 mapCase.put("index5", processInstance.getStringIndex5());
+                mapCase.put(cstRealCaseId, processInstance.getId());
+                if (processInstance.getId() != processInstance.getRootProcessInstanceId()) {
+                    mapCase.put(cstRootCaseId, processInstance.getRootProcessInstanceId());
+                    mapCase.put(cstRealCaseId, processInstance.getRootProcessInstanceId());
 
+                }
             }
             searchDetails.put("cases", listCasesJson);
         } catch (final Exception e) {
@@ -1120,8 +1087,6 @@ public class CaseHistory {
         }
         return value;
     }
-
-   
 
     /*
      * *************************************************************************
@@ -1195,7 +1160,7 @@ public class CaseHistory {
 
         message += "Registering...";
         final CommandDescriptor commandDescriptor = commandAPI.register(commandName, commandDescription, className);
-        logger.fine(loggerLabel+"deployTimerCommand:"+message);
+        logger.fine(loggerLabel + "deployTimerCommand:" + message);
         return commandDescriptor;
     }
 
@@ -1335,13 +1300,13 @@ public class CaseHistory {
             try {
                 ProcessDefinition processDefinition = processAPI.getProcessDefinition(processInstanceDescription.processDefinitionId);
                 List<DataInstance> listDataInstances = null;
-                List<Map<String,Object>> listArchivedDataInstances = null;
+                List<Map<String, Object>> listArchivedDataInstances = null;
                 List<Long> listSourceId = new ArrayList<Long>();
                 listSourceId.add(processInstanceDescription.id);
                 // collect each list
                 if (processInstanceDescription.isActive) {
                     listDataInstances = processAPI.getProcessDataInstances(processInstanceDescription.id, 0, 1000);
-                    
+
                     //listArchivedDataInstances = processAPI.getArchivedProcessDataInstances(processInstanceDescription.id, 0, 1000);
                     listArchivedDataInstances = loadArchivedProcessVariables(listSourceId, processAPI);
 
@@ -1350,158 +1315,166 @@ public class CaseHistory {
                     // listArchivedDataInstances = processAPI.getArchivedProcessDataInstances(processInstanceDescription.id, 0, 1000);
                     listArchivedDataInstances = loadArchivedProcessVariables(listSourceId, processAPI);
                 }
-                
-                completeListDataInstanceMap(listDataInstanceMap, ScopeVariable.PROCESS, null, listDataInstances,processDefinition, processInstanceDescription.id,""  );
-                completeListDataInstanceMap(listDataInstanceMap, ScopeVariable.PROCESS, StatusVariable.ARCHIVED, listArchivedDataInstances,processDefinition, processInstanceDescription.id,""  );
-                
-              
+
+                completeListDataInstanceMap(listDataInstanceMap, ScopeVariable.PROCESS, null, listDataInstances, processDefinition, processInstanceDescription.id, "");
+                completeListDataInstanceMap(listDataInstanceMap, ScopeVariable.PROCESS, StatusVariable.ARCHIVED, listArchivedDataInstances, processDefinition, processInstanceDescription.id, "");
+
             } catch (Exception e) {
 
             }
 
         }
-        
-        
-        
-        
-        
-        
-        
+
         // collect local variable in activity - attention, the same sourceinstanceid can come up multiple time
         Set<Long> setSourceInstanceId = new HashSet<Long>();
-        for (Map<String,Object> mapActivity : mapActivities.values())
-        {
+        for (Map<String, Object> mapActivity : mapActivities.values()) {
             Long activityInstanceId = (Long) mapActivity.get(cstActivityId);
-            Long activitySourceInstanceId = (Long) mapActivity.get(cstActivitySourceId);                
+            Long activitySourceInstanceId = (Long) mapActivity.get(cstActivitySourceId);
             if (setSourceInstanceId.contains(activitySourceInstanceId))
-              continue;
+                continue;
             setSourceInstanceId.add(activitySourceInstanceId);
-            try
-            {
+            try {
                 ActivityInstance act = processAPI.getActivityInstance(activityInstanceId);
-            
+
                 ProcessDefinition processDefinition = processAPI.getProcessDefinition(act.getProcessDefinitionId());
                 List<DataInstance> listDataInstances = processAPI.getActivityDataInstances(activityInstanceId, 0, 1000);
                 // the getActivityDataInstances return PROCESS_INSTANCE variable !!!
                 List<DataInstance> listFilterDataInstances = new ArrayList<DataInstance>();
-                for (DataInstance dataInstance : listDataInstances)
-                {
-                  if ( ! dataInstance.getContainerType().equals("PROCESS_INSTANCE") )
-                    listFilterDataInstances.add( dataInstance );
+                for (DataInstance dataInstance : listDataInstances) {
+                    if (!dataInstance.getContainerType().equals("PROCESS_INSTANCE"))
+                        listFilterDataInstances.add(dataInstance);
                 }
-                completeListDataInstanceMap(listDataInstanceMap, ScopeVariable.LOCAL, null, listFilterDataInstances,processDefinition, act.getParentContainerId(), act.getName()+"("+activityInstanceId+")"  );
+                completeListDataInstanceMap(listDataInstanceMap, ScopeVariable.LOCAL, null, listFilterDataInstances, processDefinition, act.getParentContainerId(), act.getName() + "(" + activityInstanceId + ")");
             } catch (Exception e) {
                 // logger.info("Exception "+e.getMessage());
-              // this should be a Archive activity
+                // this should be a Archive activity
             }
-            try
-            {
-       
-              List<Long> listSourceId = new ArrayList<Long>();
-              listSourceId.add( activitySourceInstanceId );
-              ArchivedActivityInstance archAct = processAPI.getArchivedActivityInstance(activitySourceInstanceId);
-            
-              ProcessDefinition processDefinition = processAPI.getProcessDefinition(archAct.getProcessDefinitionId());
+            try {
+
+                List<Long> listSourceId = new ArrayList<Long>();
+                listSourceId.add(activitySourceInstanceId);
+                ArchivedActivityInstance archAct = processAPI.getArchivedActivityInstance(activitySourceInstanceId);
+
+                ProcessDefinition processDefinition = processAPI.getProcessDefinition(archAct.getProcessDefinitionId());
                 // we don't collect all value by this request
-                
-              List<Map<String,Object>> listArchivedDataInstances = loadArchivedProcessVariables(listSourceId, processAPI);
-              // List<ArchivedDataInstance> listArchivedDataInstances =  processAPI.getArchivedActivityDataInstances( activitySourceInstanceId, 0, 1000);
-                    
-                completeListDataInstanceMap(listDataInstanceMap, ScopeVariable.LOCAL, StatusVariable.ARCHIVED, listArchivedDataInstances,processDefinition, archAct.getParentContainerId(), archAct.getName()+"("+activitySourceInstanceId+")"  );
+
+                List<Map<String, Object>> listArchivedDataInstances = loadArchivedProcessVariables(listSourceId, processAPI);
+                // List<ArchivedDataInstance> listArchivedDataInstances =  processAPI.getArchivedActivityDataInstances( activitySourceInstanceId, 0, 1000);
+
+                completeListDataInstanceMap(listDataInstanceMap, ScopeVariable.LOCAL, StatusVariable.ARCHIVED, listArchivedDataInstances, processDefinition, archAct.getParentContainerId(), archAct.getName() + "(" + activitySourceInstanceId + ")");
             } catch (Exception e) {
-                logger.info("Exception "+e.getMessage());            
+                logger.info("Exception " + e.getMessage());
             }
         }
         sortTheList(listDataInstanceMap, "processinstance;name;datearchived");
-        
+
         return listDataInstanceMap;
     }
-    
-    public enum StatusVariable {ACTIF, ARCHIVED };
-    public enum ScopeVariable {BDM, PROCESS, LOCAL };
-    
-            /**
-             * DataInstance to the Map
-             * @param listDataInstanceMap
-             * @param listDataInstances
-             * @param processDefinition
-             * @param processId
-             */
-            private static void completeListDataInstanceMap( List<Map<String, Object>>  listDataInstanceMap, ScopeVariable scopeVariable,StatusVariable statusVariable, List<?> listDataInstances, ProcessDefinition processDefinition, Long processId,String contextInfo  )
-            {
-            for (Object dataInstance : listDataInstances) {
-                Map<String, Object> mapDataInstance = new HashMap<String, Object>();
-                mapDataInstance.put("processname", processDefinition.getName());
-                mapDataInstance.put("processversion", processDefinition.getVersion());
-                mapDataInstance.put("processinstance", processId);
 
+    public enum StatusVariable {
+        ACTIF, ARCHIVED
+    };
+
+    public enum ScopeVariable {
+        BDM, PROCESS, LOCAL
+    };
+
+    /**
+     * DataInstance to the Map
+     * 
+     * @param listDataInstanceMap
+     * @param listDataInstances
+     * @param processDefinition
+     * @param processId
+     */
+    private static void completeListDataInstanceMap(List<Map<String, Object>> listDataInstanceMap, ScopeVariable scopeVariable, StatusVariable statusVariable, List<?> listDataInstances, ProcessDefinition processDefinition, Long processId, String contextInfo) {
+        for (Object dataInstance : listDataInstances) {
+            Map<String, Object> mapDataInstance = new HashMap<String, Object>();
+            mapDataInstance.put("processname", processDefinition.getName());
+            mapDataInstance.put("processversion", processDefinition.getVersion());
+            mapDataInstance.put("processinstance", processId);
+
+            mapDataInstance.put("scope", scopeVariable.toString());
+            mapDataInstance.put("contextinfo", contextInfo);
+            listDataInstanceMap.add(mapDataInstance);
+
+            if (dataInstance instanceof DataInstance) {
+                mapDataInstance.put("name", ((DataInstance) dataInstance).getName());
+                mapDataInstance.put("description", ((DataInstance) dataInstance).getDescription());
+                mapDataInstance.put("type", ((DataInstance) dataInstance).getClassName());
+                mapDataInstance.put("datearchived", null);
+                mapDataInstance.put("status", StatusVariable.ACTIF.toString());
                 mapDataInstance.put("scope", scopeVariable.toString());
-                mapDataInstance.put("contextinfo", contextInfo);
-                listDataInstanceMap.add(mapDataInstance);
 
-                if (dataInstance instanceof DataInstance)
-                {
-                    mapDataInstance.put("name", ((DataInstance)dataInstance).getName());
-                    mapDataInstance.put("description", ((DataInstance)dataInstance).getDescription());
-                    mapDataInstance.put("type", ((DataInstance)dataInstance).getClassName());
-                    mapDataInstance.put("datearchived", null);
-                    mapDataInstance.put("status", StatusVariable.ACTIF.toString() );
-                    mapDataInstance.put("scope", scopeVariable.toString() );
-
-                    String jsonSt = new JsonBuilder(((DataInstance)dataInstance).getValue()).toPrettyString();
-                    mapDataInstance.put("value", jsonSt);
-                }
-                if (dataInstance instanceof ArchivedDataInstance)
-                {
-                    mapDataInstance.put("name", ((ArchivedDataInstance)dataInstance).getName());
-                    mapDataInstance.put("description", ((ArchivedDataInstance)dataInstance).getDescription());
-                    mapDataInstance.put("type", ((ArchivedDataInstance)dataInstance).getClassName());
-                    mapDataInstance.put("datearchived", null);
-                    
-                    mapDataInstance.put("status", StatusVariable.ARCHIVED.toString() );
-                    mapDataInstance.put("scope", scopeVariable.toString() );
-    
-                    String jsonSt = new JsonBuilder(((DataInstance)dataInstance).getValue()).toPrettyString();
-                    mapDataInstance.put("value", jsonSt);
-                }
-                if (dataInstance instanceof Map)
-                {
-                  
-                  mapDataInstance.putAll( (Map) dataInstance );
-                        
-                  mapDataInstance.put("processinstance", processId);
-                    mapDataInstance.put("processname", processDefinition == null ? "" : processDefinition.getName());
-                    mapDataInstance.put("processversion", processDefinition == null ? "" : processDefinition.getVersion());
-
-                    //mapDataInstance.put("name", variable.get("name") );
-                    //mapDataInstance.put("description", variable.get("description"));
-                    //mapDataInstance.put("type", variable.get("type"));
-                    //mapDataInstance.put("datearchived", variable.get("datearchived"));
-                    // mapDataInstance.put("value", variable.get("value"));
-                    mapDataInstance.put("status", statusVariable.toString() );
-                    mapDataInstance.put("scope", scopeVariable.toString() );
- 
-                    // String jsonSt = new JsonBuilder(variable.getValue()).toPrettyString();
-                }
-                /*
-                 * Object dataValueJson = (jsonSt==null || jsonSt.length()==0) ?
-                 * null : new JsonSlurper().parseText(jsonSt);
-                 * mapDataInstance.put("value", dataValueJson);
-                 */
+                mapDataInstance.put("value", getValueToDisplay(((DataInstance) dataInstance).getValue()));
             }
-            }
+            if (dataInstance instanceof ArchivedDataInstance) {
+                mapDataInstance.put("name", ((ArchivedDataInstance) dataInstance).getName());
+                mapDataInstance.put("description", ((ArchivedDataInstance) dataInstance).getDescription());
+                mapDataInstance.put("type", ((ArchivedDataInstance) dataInstance).getClassName());
+                mapDataInstance.put("datearchived", null);
 
+                mapDataInstance.put("status", StatusVariable.ARCHIVED.toString());
+                mapDataInstance.put("scope", scopeVariable.toString());
+
+                mapDataInstance.put("value", getValueToDisplay(((DataInstance) dataInstance).getValue()));
+            }
+            if (dataInstance instanceof Map) {
+
+                mapDataInstance.putAll((Map) dataInstance);
+
+                mapDataInstance.put("processinstance", processId);
+                mapDataInstance.put("processname", processDefinition == null ? "" : processDefinition.getName());
+                mapDataInstance.put("processversion", processDefinition == null ? "" : processDefinition.getVersion());
+
+                //mapDataInstance.put("name", variable.get("name") );
+                //mapDataInstance.put("description", variable.get("description"));
+                //mapDataInstance.put("type", variable.get("type"));
+                //mapDataInstance.put("datearchived", variable.get("datearchived"));
+                // mapDataInstance.put("value", variable.get("value"));
+                mapDataInstance.put("status", statusVariable.toString());
+                mapDataInstance.put("scope", scopeVariable.toString());
+
+                // String jsonSt = new JsonBuilder(variable.getValue()).toPrettyString();
+            }
+            /*
+             * Object dataValueJson = (jsonSt==null || jsonSt.length()==0) ?
+             * null : new JsonSlurper().parseText(jsonSt);
+             * mapDataInstance.put("value", dataValueJson);
+             */
+        }
+    }
+
+    /**
+     * JsonBuilder can manage very complex data except.... the basic integer one...
+     * 
+     * @param value
+     * @return
+     */
+    private static Object getValueToDisplay(Object value) {
+        if (value == null)
+            return null;
+        if (value instanceof Long || value instanceof Double || value instanceof Float || value instanceof Integer)
+            return value;
+        Object valueJson = new JsonBuilder(value).toPrettyString();
+        // last controle...
+        if (valueJson == "" && value != null)
+            return value;
+        return valueJson;
+    }
 
     /**
      * Container for the processInstanceList
      */
-    public static class ProcessInstanceList
-    {
-      List<Map<String, Object>> listDetails = new ArrayList<Map<String, Object>>();;
-      List<Long> listIds = new ArrayList<Long>();;
+    public static class ProcessInstanceList {
+
+        List<Map<String, Object>> listDetails = new ArrayList<Map<String, Object>>();;
+        List<Long> listIds = new ArrayList<Long>();;
     }
+
     /**
      * load all processinstance declaration
+     * 
      * @param rootProcessInstanceId
      * @param showSubProcess
      * @param processAPI
@@ -1509,7 +1482,7 @@ public class CaseHistory {
      */
     public static ProcessInstanceList loadProcessInstances(Long rootProcessInstanceId, boolean showSubProcess,
             ProcessAPI processAPI) {
-      ProcessInstanceList processInstanceList = new ProcessInstanceList();
+        ProcessInstanceList processInstanceList = new ProcessInstanceList();
 
         List<ProcessInstanceDescription> listProcessInstances = getAllProcessInstance(rootProcessInstanceId,
                 showSubProcess, processAPI);
@@ -1520,52 +1493,44 @@ public class CaseHistory {
                 Map<String, Object> processInstanceMap = new HashMap<String, Object>();
                 processInstanceList.listDetails.add(processInstanceMap);
                 processInstanceList.listIds.add(processInstanceDescription.id);
-                
+
                 processInstanceMap.put("id", processInstanceDescription.id);
 
                 processInstanceMap.put("processname", processDefinition.getName());
                 processInstanceMap.put("processversion", processDefinition.getVersion());
-                if (processInstanceDescription.callerId!=null && processInstanceDescription.callerId>0)
-                {
-                    boolean foundIt=false;
-                    try
-                    {
-                    ActivityInstance act = processAPI.getActivityInstance(processInstanceDescription.callerId);
-                    foundIt=true;
-                    processInstanceMap.put("parentact", act.getName());
-                    long ppid= act.getParentProcessInstanceId();
-                    
-                    processInstanceMap.put("parentid", ppid);;
-                    ProcessDefinition parentProcessDefinition = processAPI.getProcessDefinition(act.getProcessDefinitionId());
-                    
-                    processInstanceMap.put("parentprocessname", parentProcessDefinition.getName());
-                    processInstanceMap.put("parentprocessversion", parentProcessDefinition.getVersion());
-                    }
-                    catch(Exception e)
-                    {
-                    }
-                    if (!foundIt)
-                    { // maybe archived
-                        try
-                        {
-                        ArchivedActivityInstance act = processAPI.getArchivedActivityInstance(processInstanceDescription.callerId);
-                        foundIt=true;
+                if (processInstanceDescription.callerId != null && processInstanceDescription.callerId > 0) {
+                    boolean foundIt = false;
+                    try {
+                        ActivityInstance act = processAPI.getActivityInstance(processInstanceDescription.callerId);
+                        foundIt = true;
                         processInstanceMap.put("parentact", act.getName());
-                        long ppid= act.getProcessInstanceId();
-                        
+                        long ppid = act.getParentProcessInstanceId();
+
                         processInstanceMap.put("parentid", ppid);;
                         ProcessDefinition parentProcessDefinition = processAPI.getProcessDefinition(act.getProcessDefinitionId());
-                        
+
                         processInstanceMap.put("parentprocessname", parentProcessDefinition.getName());
                         processInstanceMap.put("parentprocessversion", parentProcessDefinition.getVersion());
-                        }
-                        catch(Exception e)
-                        {
+                    } catch (Exception e) {
+                    }
+                    if (!foundIt) { // maybe archived
+                        try {
+                            ArchivedActivityInstance act = processAPI.getArchivedActivityInstance(processInstanceDescription.callerId);
+                            foundIt = true;
+                            processInstanceMap.put("parentact", act.getName());
+                            long ppid = act.getProcessInstanceId();
+
+                            processInstanceMap.put("parentid", ppid);;
+                            ProcessDefinition parentProcessDefinition = processAPI.getProcessDefinition(act.getProcessDefinitionId());
+
+                            processInstanceMap.put("parentprocessname", parentProcessDefinition.getName());
+                            processInstanceMap.put("parentprocessversion", parentProcessDefinition.getVersion());
+                        } catch (Exception e) {
                         }
                     }
 
                 }
-                processInstanceMap.put("status",  processInstanceDescription.isActive ? "ACTIF" : "ARCHIVED");
+                processInstanceMap.put("status", processInstanceDescription.isActive ? "ACTIF" : "ARCHIVED");
             } catch (Exception e) {
                 final StringWriter sw = new StringWriter();
                 e.printStackTrace(new PrintWriter(sw));
@@ -1591,7 +1556,7 @@ public class CaseHistory {
     private static List<ProcessInstanceDescription> getAllProcessInstance(long rootProcessInstance,
             boolean showSubProcess, ProcessAPI processAPI) {
         List<ProcessInstanceDescription> listProcessInstances = new ArrayList<ProcessInstanceDescription>();
-        
+
         Connection con = null;
         PreparedStatement pstmt = null;
         ResultSet rs = null;
@@ -1610,7 +1575,7 @@ public class CaseHistory {
                 processInstanceDescription.processDefinitionId = rs.getLong(2);
                 processInstanceDescription.callerId = rs.getLong(3);
                 processInstanceDescription.isActive = true;
-                if (showSubProcess || processInstanceDescription.id==rootProcessInstance) 
+                if (showSubProcess || processInstanceDescription.id == rootProcessInstance)
                     listProcessInstances.add(processInstanceDescription);
             }
             rs.close();
@@ -1628,14 +1593,13 @@ public class CaseHistory {
                 processInstanceDescription.callerId = rs.getLong(3);
                 processInstanceDescription.isActive = false;
                 //maybe in double?
-                boolean alreadyExist=false;
-                for (ProcessInstanceDescription current : listProcessInstances)
-                {
+                boolean alreadyExist = false;
+                for (ProcessInstanceDescription current : listProcessInstances) {
                     if (current.id == processInstanceDescription.id)
-                        alreadyExist=true;
+                        alreadyExist = true;
                 }
                 if (!alreadyExist)
-                    if (showSubProcess || processInstanceDescription.id==rootProcessInstance) 
+                    if (showSubProcess || processInstanceDescription.id == rootProcessInstance)
                         listProcessInstances.add(processInstanceDescription);
 
             }
@@ -1678,7 +1642,9 @@ public class CaseHistory {
     private static String sqlDataSourceName = "java:/comp/env/bonitaSequenceManagerDS";
 
     /**
-     * The ProcessAPI.getArchivedProcessDataInstances return only the LAST archived version, (not the list) so to get all archived data, only way is the direct SQL request
+     * The ProcessAPI.getArchivedProcessDataInstances return only the LAST archived version, (not the
+     * list) so to get all archived data, only way is the direct SQL request
+     * 
      * @param sourceId : maybe the processInstance ID or, for a local variable, the activityId
      * @param processAPI
      * @return
@@ -1705,27 +1671,25 @@ public class CaseHistory {
             listColumnName.add("FLOATVALUE");
             listColumnName.add("BLOBVALUE");
             listColumnName.add("CLOBVALUE");
-           
+
             String sqlRequest = " select NAME , CLASSNAME, CONTAINERID, SOURCEOBJECTID, ID,";
             for (String columnName : listColumnName)
                 sqlRequest += columnName + ", ";
 
             sqlRequest += " ARCHIVEDATE from ARCH_DATA_INSTANCE where CONTAINERID in (";
             // generate a ? per item
-            for (int i=0;i<sourceId.size();i++)
-            {
-              if (i>0)
-                sqlRequest+=",";
-              sqlRequest+=" ? ";
+            for (int i = 0; i < sourceId.size(); i++) {
+                if (i > 0)
+                    sqlRequest += ",";
+                sqlRequest += " ? ";
             }
-            sqlRequest+=") ORDER BY ARCHIVEDATE";
+            sqlRequest += ") ORDER BY ARCHIVEDATE";
 
             con = getConnection();
             pstmt = con.prepareStatement(sqlRequest);
-            
-            for (int i=0;i<sourceId.size();i++)
-            {
-              pstmt.setObject(i+1, sourceId.get( i ));
+
+            for (int i = 0; i < sourceId.size(); i++) {
+                pstmt.setObject(i + 1, sourceId.get(i));
             }
 
             rs = pstmt.executeQuery();
@@ -1747,10 +1711,9 @@ public class CaseHistory {
                         if (value != null) {
                             if ("java.util.Date".equals(typeVariable) && value instanceof Long) {
                                 valueSt = sdf.format(new Date((Long) value));
-                            } else if (value instanceof Clob)
-                            {
-                                long length=((Clob)value).length();
-                                valueSt = ((Clob)value).getSubString(1, (int) length);
+                            } else if (value instanceof Clob) {
+                                long length = ((Clob) value).length();
+                                valueSt = ((Clob) value).getSubString(1, (int) length);
                             } else if ("java.lang.String".equals(typeVariable)) {
                                 valueSt = value.toString();
                                 // format is clob14:'value'
@@ -1758,7 +1721,7 @@ public class CaseHistory {
                                 if (pos != -1) {
                                     valueSt = valueSt.substring(pos + 3);
                                     valueSt = valueSt.substring(0, valueSt.length() - 1);
-                                    valueSt = "\""+valueSt+"\"";
+                                    valueSt = "\"" + valueSt + "\"";
                                 }
 
                             } else
@@ -1835,84 +1798,84 @@ public class CaseHistory {
      * @param businessDataAPI
      * @return
      */
-    public static List<Map<String, Object>> loadBdmVariables(Long rootProcessInstanceId,  boolean showSubProcess, APISession apiSession,
+    public static List<Map<String, Object>> loadBdmVariables(Long rootProcessInstanceId, boolean showSubProcess, APISession apiSession,
             BusinessDataAPI businessDataAPI, ProcessAPI processAPI) {
         List<Map<String, Object>> listDataInstanceMap = new ArrayList<Map<String, Object>>();
         List<ProcessInstanceDescription> listProcessInstances = getAllProcessInstance(rootProcessInstanceId, showSubProcess, processAPI);
         for (ProcessInstanceDescription processInstanceDescription : listProcessInstances) {
-        // BDM
-        List<BusinessDataReference> listBdmReference = businessDataAPI.getProcessBusinessDataReferences(processInstanceDescription.id, 0, 1000);
-        for (BusinessDataReference businessDataReference : listBdmReference) {
+            // BDM
+            List<BusinessDataReference> listBdmReference = businessDataAPI.getProcessBusinessDataReferences(processInstanceDescription.id, 0, 1000);
+            for (BusinessDataReference businessDataReference : listBdmReference) {
 
-            List<Long> listStorageIds = new ArrayList<Long>();
-            Object collectListBdm = null;
-            if (businessDataReference instanceof SimpleBusinessDataReference) {
-                collectListBdm = null;
-                // if null, add it even to have a result (bdm name + null)
-                listStorageIds.add(((SimpleBusinessDataReference) businessDataReference).getStorageId());
-            } else if (businessDataReference instanceof MultipleBusinessDataReference) {
-                // this is a multiple data
-                collectListBdm = new ArrayList<Object>();
-                if (((MultipleBusinessDataReference) businessDataReference).getStorageIds() == null)
-                    listStorageIds.add(null); // add a null value to have a
-                                              // result (bdm name + null) and
-                                              // geet the resultBdm as null
-                else {
-                    listStorageIds.addAll(((MultipleBusinessDataReference) businessDataReference).getStorageIds());
-                }
-            }
-
-            // now we get a listStorageIds
-            try {
-                String classDAOName = businessDataReference.getType() + "DAO";
-                @SuppressWarnings("rawtypes")
-                Class classDao = Class.forName(classDAOName);
-                if (classDao == null) {
-                    // a problem here...
-                    continue;
+                List<Long> listStorageIds = new ArrayList<Long>();
+                Object collectListBdm = null;
+                if (businessDataReference instanceof SimpleBusinessDataReference) {
+                    collectListBdm = null;
+                    // if null, add it even to have a result (bdm name + null)
+                    listStorageIds.add(((SimpleBusinessDataReference) businessDataReference).getStorageId());
+                } else if (businessDataReference instanceof MultipleBusinessDataReference) {
+                    // this is a multiple data
+                    collectListBdm = new ArrayList<Object>();
+                    if (((MultipleBusinessDataReference) businessDataReference).getStorageIds() == null)
+                        listStorageIds.add(null); // add a null value to have a
+                                                  // result (bdm name + null) and
+                                                  // geet the resultBdm as null
+                    else {
+                        listStorageIds.addAll(((MultipleBusinessDataReference) businessDataReference).getStorageIds());
+                    }
                 }
 
-                BusinessObjectDAOFactory daoFactory = new BusinessObjectDAOFactory();
-
-                BusinessObjectDAO dao = daoFactory.createDAO(apiSession, classDao);
-                for (Long storageId : listStorageIds) {
-                    if (storageId == null) {
+                // now we get a listStorageIds
+                try {
+                    String classDAOName = businessDataReference.getType() + "DAO";
+                    @SuppressWarnings("rawtypes")
+                    Class classDao = Class.forName(classDAOName);
+                    if (classDao == null) {
+                        // a problem here...
                         continue;
                     }
-                    Entity dataBdmEntity = null; // dao.findByPersistenceId(storageId);
-                    String jsonSt = dataBdmEntity == null ? "" : new JsonBuilder(dataBdmEntity).toPrettyString();
-                    // Object dataValueJson = new
-                    // JsonSlurper().parseText(jsonSt);
 
-                    if (collectListBdm != null) {
-                        @SuppressWarnings("unchecked")
-                        List<Object> collectList = (List<Object>) collectListBdm;
-                        collectList.add(jsonSt);
-                    } else {
-                        collectListBdm = jsonSt;
-                        break; // be sure we load only one BDM
+                    BusinessObjectDAOFactory daoFactory = new BusinessObjectDAOFactory();
+
+                    BusinessObjectDAO dao = daoFactory.createDAO(apiSession, classDao);
+                    for (Long storageId : listStorageIds) {
+                        if (storageId == null) {
+                            continue;
+                        }
+                        Entity dataBdmEntity = null; // dao.findByPersistenceId(storageId);
+                        String jsonSt = dataBdmEntity == null ? "" : new JsonBuilder(dataBdmEntity).toPrettyString();
+                        // Object dataValueJson = new
+                        // JsonSlurper().parseText(jsonSt);
+
+                        if (collectListBdm != null) {
+                            @SuppressWarnings("unchecked")
+                            List<Object> collectList = (List<Object>) collectListBdm;
+                            collectList.add(jsonSt);
+                        } else {
+                            collectListBdm = jsonSt;
+                            break; // be sure we load only one BDM
+                        }
                     }
+
+                    Map<String, Object> mapDataInstance = new HashMap<String, Object>();
+                    listDataInstanceMap.add(mapDataInstance);
+
+                    ProcessDefinition processDefinition = processAPI.getProcessDefinition(processInstanceDescription.processDefinitionId);
+
+                    mapDataInstance.put("processinstance", processInstanceDescription.id);
+                    mapDataInstance.put("processname", processDefinition == null ? "" : processDefinition.getName());
+                    mapDataInstance.put("processversion", processDefinition == null ? "" : processDefinition.getVersion());
+
+                    mapDataInstance.put("status", StatusVariable.ACTIF.toString());
+                    mapDataInstance.put("scope", ScopeVariable.BDM.toString());
+
+                    mapDataInstance.put("name", businessDataReference.getName());
+                    mapDataInstance.put("type", "");
+                    mapDataInstance.put("value", collectListBdm);
+                } catch (Exception e) {
+
                 }
-
-                Map<String, Object> mapDataInstance = new HashMap<String, Object>();
-                listDataInstanceMap.add(mapDataInstance);
-                
-                ProcessDefinition processDefinition = processAPI.getProcessDefinition(processInstanceDescription.processDefinitionId);
-
-                mapDataInstance.put("processinstance", processInstanceDescription.id);
-                mapDataInstance.put("processname", processDefinition == null ? "" : processDefinition.getName());
-                mapDataInstance.put("processversion", processDefinition == null ? "" : processDefinition.getVersion());
-
-                mapDataInstance.put("status", StatusVariable.ACTIF.toString() );
-                mapDataInstance.put("scope", ScopeVariable.BDM.toString() );
-
-                mapDataInstance.put("name", businessDataReference.getName());
-                mapDataInstance.put("type", "");
-                mapDataInstance.put("value", collectListBdm);
-            } catch (Exception e) {
-
-            }
-        } // end loop on all BDM
+            } // end loop on all BDM
         } // end loop all processinstance
         return listDataInstanceMap;
     } // end collect BDM
@@ -1966,38 +1929,36 @@ public class CaseHistory {
     /* -------------------------------------------------------------------- */
     /**
      * @param listToSort
-     * @param attributName : list of attribut separate par ; Example: name;docindex,processinstance . If name hjave the same value, compare docindex and so on.
+     * @param attributName : list of attribut separate par ; Example: name;docindex,processinstance .
+     *        If name hjave the same value, compare docindex and so on.
      */
     private static void sortTheList(List<Map<String, Object>> listToSort, final String attributName) {
 
         Collections.sort(listToSort, new Comparator<Map<String, Object>>() {
 
             public int compare(final Map<String, Object> s1, final Map<String, Object> s2) {
-                
-                StringTokenizer st = new StringTokenizer(attributName,  ";");
-                while (st.hasMoreTokens())
-                {
+
+                StringTokenizer st = new StringTokenizer(attributName, ";");
+                while (st.hasMoreTokens()) {
                     String token = st.nextToken();
-                    Object d1 = s1.get( token );
-                    Object d2 = s2.get( token );
-                    if (d1!=null && d2!=null)
-                    {
-                        int comparaison=0;
+                    Object d1 = s1.get(token);
+                    Object d2 = s2.get(token);
+                    if (d1 != null && d2 != null) {
+                        int comparaison = 0;
                         if (d1 instanceof String)
-                            comparaison=((String) d1).compareTo( ((String)d2));
+                            comparaison = ((String) d1).compareTo(((String) d2));
                         if (d1 instanceof Integer)
-                            comparaison=((Integer) d1).compareTo( ((Integer)d2));
+                            comparaison = ((Integer) d1).compareTo(((Integer) d2));
                         if (d1 instanceof Long)
-                            comparaison=((Long) d1).compareTo( ((Long)d2));
-                        if (comparaison!=0)
+                            comparaison = ((Long) d1).compareTo(((Long) d2));
+                        if (comparaison != 0)
                             return comparaison;
                     }
                     // one is null, or both are null : continue
                 }
                 return 0;
             }
-        });
-        ;
+        });;
     }
 
 }

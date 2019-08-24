@@ -19,67 +19,68 @@ import org.json.simple.JSONValue;
 import com.bonitasoft.custompage.longboard.toolbox.LongboardToolbox;
 
 public class SignalOperations {
-	private static Logger logger = Logger.getLogger(CaseOperations.class.getName());
 
-	private final static BEvent eventSignalSentWithSuccess = new BEvent(SignalOperations.class.getName(), 1, Level.SUCCESS, "Signal sent", "The signal is sent with success");
-	private final static BEvent eventSignalSentError = new BEvent(SignalOperations.class.getName(), 2, Level.ERROR, "Error sending the Signal", "An error arrived when the Signal was send", "Cases are not unblock", "Check the exception");
-	
-	/* -------------------------------------------------------------------- */
-	/*                                                                      */
-	/* Collect Message														*/
-	/*                                                                      */
-	/* -------------------------------------------------------------------- */
+    private static Logger logger = Logger.getLogger(CaseOperations.class.getName());
 
-	public static void collectSignals(CatchEventDefinition catchEventDefinition, EventInstance eventInstance, List<Map<String, Object>> listSignals) 
-		{
-			for (CatchSignalEventTriggerDefinition signalEvent : catchEventDefinition.getSignalEventTriggerDefinitions()) {
-				Map<String, Object> eventSignal = new HashMap<String, Object>();
-				eventSignal.put(CaseHistory.cstActivityName, eventInstance.getName());
-				eventSignal.put(CaseHistory.cstActivitySignalName, signalEvent.getSignalName());
-				eventSignal.put(CaseHistory.cstActivityId, eventInstance.getFlownodeDefinitionId());
+    private final static BEvent eventSignalSentWithSuccess = new BEvent(SignalOperations.class.getName(), 1, Level.SUCCESS, "Signal sent", "The signal is sent with success");
+    private final static BEvent eventSignalSentError = new BEvent(SignalOperations.class.getName(), 2, Level.ERROR, "Error sending the Signal", "An error arrived when the Signal was send", "Cases are not unblock", "Check the exception");
 
-				// mapActivity.put(CaseHistory.cstActivitySignalName, signalEvent.getSignalName());
-				listSignals.add(eventSignal);
-			}
-		}
-	/* -------------------------------------------------------------------- */
-	/*                                                                      */
-	/* sendSignal call														*/
-	/*                                                                      */
-	/* -------------------------------------------------------------------- */
+    /* -------------------------------------------------------------------- */
+    /*                                                                      */
+    /* Collect Message */
+    /*                                                                      */
+    /* -------------------------------------------------------------------- */
 
-	public static class SignalParameter {
-		public String signalName;
-		public Long activityId;
+    public static void collectSignals(CatchEventDefinition catchEventDefinition, EventInstance eventInstance, List<Map<String, Object>> listSignals) {
+        for (CatchSignalEventTriggerDefinition signalEvent : catchEventDefinition.getSignalEventTriggerDefinitions()) {
+            Map<String, Object> eventSignal = new HashMap<String, Object>();
+            eventSignal.put(CaseHistory.cstActivityName, eventInstance.getName());
+            eventSignal.put(CaseHistory.cstActivitySignalName, signalEvent.getSignalName());
+            eventSignal.put(CaseHistory.cstActivityId, eventInstance.getFlownodeDefinitionId());
 
-		public static SignalParameter getInstanceFromJson(String jsonSt) {
-			SignalParameter signalParameter = new SignalParameter();
-			if (jsonSt == null)
-				return signalParameter;
+            // mapActivity.put(CaseHistory.cstActivitySignalName, signalEvent.getSignalName());
+            listSignals.add(eventSignal);
+        }
+    }
+    /* -------------------------------------------------------------------- */
+    /*                                                                      */
+    /* sendSignal call */
+    /*                                                                      */
+    /* -------------------------------------------------------------------- */
 
-			final HashMap<String, Object> jsonHash = (HashMap<String, Object>) JSONValue.parse(jsonSt);
+    public static class SignalParameter {
 
-			signalParameter.signalName = LongboardToolbox.jsonToString(jsonHash.get("signalName"), null);
-			signalParameter.activityId = LongboardToolbox.jsonToLong(jsonHash.get(CaseHistory.cstActivityId), null);
-			return signalParameter;
-		}
+        public String signalName;
+        public Long activityId;
 
-	}
+        public static SignalParameter getInstanceFromJson(String jsonSt) {
+            SignalParameter signalParameter = new SignalParameter();
+            if (jsonSt == null)
+                return signalParameter;
 
-	public static Map<String, Object> sendSignal(SignalParameter signalParameter, ProcessAPI processAPI) {
-		Map<String, Object> answer = new HashMap<String, Object>();
-		List<BEvent> listEvents = new ArrayList<BEvent>();
-		try {
-			processAPI.sendSignal(signalParameter.signalName);
-			// answer.put("statusexecution", "Done");
-			listEvents.add(eventSignalSentWithSuccess);
-			
-		} catch (SendEventException e) {
-			// answer.put("statusexecution", "Signal does not exist");
-			listEvents.add(new BEvent( eventSignalSentError, e, signalParameter.signalName));
+            final HashMap<String, Object> jsonHash = (HashMap<String, Object>) JSONValue.parse(jsonSt);
 
-		}
-		answer.put("listevents",  BEventFactory.getHtml( listEvents));
-		return answer;
-	}
+            signalParameter.signalName = LongboardToolbox.jsonToString(jsonHash.get("signalName"), null);
+            signalParameter.activityId = LongboardToolbox.jsonToLong(jsonHash.get(CaseHistory.cstActivityId), null);
+            return signalParameter;
+        }
+
+    }
+
+    public static Map<String, Object> sendSignal(SignalParameter signalParameter, ProcessAPI processAPI) {
+        Map<String, Object> answer = new HashMap<String, Object>();
+        List<BEvent> listEvents = new ArrayList<BEvent>();
+        try {
+            processAPI.sendSignal(signalParameter.signalName);
+            // answer.put("statusexecution", "Done");
+            listEvents.add(eventSignalSentWithSuccess);
+
+        } catch (SendEventException e) {
+            // answer.put("statusexecution", "Signal does not exist");
+            listEvents.add(new BEvent(eventSignalSentError, e, signalParameter.signalName));
+
+        }
+        answer.put("listevents", BEventFactory.getHtml(listEvents));
+        return answer;
+    }
 }
