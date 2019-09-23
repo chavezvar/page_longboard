@@ -53,7 +53,7 @@
 
 	<center>
 	<table><tr><td><h1>Long board</h1></td><td rowspan="2"><img src="pageResource?page=custompage_longboard&location=img/longboard.jpg" width="150" heigth="150" /></td></tr>
-		<tr><td style="font-size:0.8em"> <a href="" ng-click="mainctrl.showhistory( ! mainctrl.isshowhistory )">V4.1</a></td></tr>
+		<tr><td style="font-size:0.8em"> <a href="" ng-click="mainctrl.showhistory( ! mainctrl.isshowhistory )">V4.2</a></td></tr>
 		<tr><td>
 		<div id="showHistory" ng-show="mainctrl.isshowhistory" style="border-width:2px;border-style:ridge;border-color:blue">
 		1.0 First version<br>
@@ -66,9 +66,10 @@
 		2.1 Bonita V7 integration
 		2.2 Run in a Living application
 		3.0 Case History Retry, Update timer, send message and timer
-		3.1 Avoid cache page too strong / display subprocess variable
+		3.1 Avoid cache page too strong / display subprocess variables
 		4.0 Fix issue in Search, display simple variable data (Long,Integer,Float,Double), remove additionnal tool
 		4.1 Available for community
+		4.2 Add BDM PersistenceId, display Contract on Human User Tasks
 		</td></tr>
 		</div>
 	</table>
@@ -94,6 +95,7 @@
 						<table>
 							<tr><td>Case Id</td><td> <input type="number" ng-model="histctrl.param.caseId"  /></td></tr>
 							<tr><td>Show sub process tasks</td>	<td> <input  type="checkbox" ng-model="histctrl.param.showSubProcess"  /></td></tr>		
+							<tr><td>Load BDM Variable</td>	<td> <input  type="checkbox" ng-model="histctrl.param.loadBdmVariable"  /></td></tr>
 							<tr><td colspan="2">
 								<table>
 									<tr><td>  <div ng-show="histctrl.historyinprogress"><span class="Loading">.</span></div>
@@ -229,12 +231,15 @@
 						</tr>
 					</table>
 
-					
+					<!-- ************************************************************ -->
+					<!--                           ACTIVITIES                         -->
+					<!-- ************************************************************ -->
 					<h2><button ng-click="histctrl.showcasehistory()" ng-disabled="histctrl.historyinprogress" class="btn btn-info btn-xs"><span class="glyphicon glyphicon-refresh"></span></button>Activities</h2>
 					See <a href="http://documentation.bonitasoft.com/execution-sequence-states-and-transactions">Documentation</a> for more information on states
 					<input type="checkbox" ng-model="histctrl.showFlowdefnodeid">Show FlowNodeDefid
 					<input type="checkbox" ng-model="histctrl.showParentContainer">Show Parent Container
 					<input type="checkbox" ng-model="histctrl.showParentactivityid">Show Parent Activity
+					<input type="checkbox" ng-model="histctrl.showContractValues">Show All Contract Values (human task)
 					<table class="table table-striped table-hover table-condensed">
 						<tr>
 							<th class="tabletitle" style="background-color:#fcf8e3">Date</th>
@@ -250,22 +255,45 @@
 							<th class="tabletitle" style="background-color:#fcf8e3" ng-show="histctrl.showParentContainer" >ParentContainer</th>
 							<th class="tabletitle" style="background-color:#fcf8e3" ng-show="histctrl.showParentactivityid">parentactivityid</th>							
 						</tr>
-						<tr ng-repeat="activity in histctrl.casehistory.activities track by $index">
-							<td style="{{histctrl.getStyleActivity(activity)}}">{{activity.humanActivityDateSt}}</td>
-							<td style="{{histctrl.getStyleActivity(activity)}}">{{activity.activityName}}</td>
-							<td style="{{histctrl.getStyleActivity(activity)}}">{{activity.activityIdDesc}}</td>
-							<td style="{{histctrl.getStyleActivity(activity)}}">{{activity.perimeter}}</td>
-							<td style="{{histctrl.getStyleActivity(activity)}}">{{activity.jobIsStillSchedule}} {{activity.jobScheduleDate}}</td>
-							<td style="{{histctrl.getStyleActivity(activity)}}">{{activity.isTerminal}}</td>
-							<td style="{{histctrl.getStyleActivity(activity)}}">{{activity.type}}</td>
-							<td style="{{histctrl.getStyleActivity(activity)}}">{{activity.state}}</td>
-							<td style="{{histctrl.getStyleActivity(activity)}}">{{activity.executedby}}</td>
-							<td style="{{histctrl.getStyleActivity(activity)}}" ng-show="histctrl.showFlowdefnodeid"   >{{activity.FlownodeDefId}}</td>
-							<td style="{{histctrl.getStyleActivity(activity)}}" ng-show="histctrl.showParentContainer" >{{activity.parentcontainer}}</td>
-							<td style="{{histctrl.getStyleActivity(activity)}}"  ng-show="histctrl.showParentactivityid">{{activity.parentactivityid}}</td>
-							<!-- <td>{{activity.expl}}</td> -->
-						</tr>
+						<tbody ng-repeat="activity in histctrl.casehistory.activities track by $index">
+							<tr>
+								<td style="{{histctrl.getStyleActivity(activity)}}">{{activity.humanActivityDateSt}}</td>
+								<td style="{{histctrl.getStyleActivity(activity)}}">{{activity.activityName}}</td>
+								<td style="{{histctrl.getStyleActivity(activity)}}">{{activity.activityIdDesc}}</td>
+								<td style="{{histctrl.getStyleActivity(activity)}}">{{activity.perimeter}}</td>
+								<td style="{{histctrl.getStyleActivity(activity)}}">{{activity.jobIsStillSchedule}} {{activity.jobScheduleDate}}</td>
+								<td style="{{histctrl.getStyleActivity(activity)}}">{{activity.isTerminal}}</td>
+								<td style="{{histctrl.getStyleActivity(activity)}}">{{activity.type}}
+									<div ng-if="activity.contract">
+										<input type="checkbox" ng-model="activity.showContract">Contract
+									</div>
+								</td>
+								<td style="{{histctrl.getStyleActivity(activity)}}">{{activity.state}}</td>
+								<td style="{{histctrl.getStyleActivity(activity)}}">{{activity.executedby}}</td>
+								<td style="{{histctrl.getStyleActivity(activity)}}" ng-show="histctrl.showFlowdefnodeid"   >{{activity.FlownodeDefId}}</td>
+								<td style="{{histctrl.getStyleActivity(activity)}}" ng-show="histctrl.showParentContainer" >{{activity.parentcontainer}}</td>
+								<td style="{{histctrl.getStyleActivity(activity)}}"  ng-show="histctrl.showParentactivityid">{{activity.parentactivityid}}</td>
+								<!-- <td>{{activity.expl}}</td> -->
+							</tr>
+							<tr ng-if="histctrl.showContractValues || activity.showContract">
+								<td></td>
+								<td></td>
+								<td colspan="7">
+									<table style="border:1px">
+									<tr ng-repeat ="contract in activity.contract" >
+										<td style="border: 1px solid black;vertical-align: top">{{contract.name}}</td>
+										<td style="border: 1px solid black;vertical-align: top">{{contract.type}}</td>
+										<td style="border: 1px solid black;vertical-align: top">{{contract.value}}</td>
+									</tr>
+									</table>
+								</td>
+							</tr> 
+						</tbody>
 					</table>
+					
+					<!-- ************************************************************ -->
+					<!--                           TIMERS                             -->
+					<!-- ************************************************************ -->
 					
 					<h2><button ng-click="histctrl.showcasehistory()" ng-disabled="histctrl.historyinprogress" class="btn btn-info btn-xs"><span class="glyphicon glyphicon-refresh"></span></button>Timers</h2>
 					<table class="table table-striped table-hover table-condensed">
@@ -310,6 +338,11 @@
 								
 						</tr>
 					</table>
+					
+					<!-- ************************************************************ -->
+					<!--                           SIGNAL                             -->
+					<!-- ************************************************************ -->
+					
 					<h2><button ng-click="histctrl.showcasehistory()" ng-disabled="histctrl.historyinprogress" class="btn btn-info btn-xs"><span class="glyphicon glyphicon-refresh"></span></button>Signals</h2>
 					<table class="table table-striped table-hover table-condensed">
 						<tr>
@@ -329,6 +362,11 @@
 							</td>
 						</tr>	
 					</table>
+					
+					
+					<!-- ************************************************************ -->
+					<!--                           MESSAGE                            -->
+					<!-- ************************************************************ -->
 					
 					<h2><button ng-click="histctrl.showcasehistory()" ng-disabled="histctrl.historyinprogress" class="btn btn-info btn-xs"><span class="glyphicon glyphicon-refresh"></span></button>Messages</h2>
 					<table class="table table-striped table-hover table-condensed">
@@ -372,6 +410,11 @@
 						</tbody>
 					</table>
 					
+					
+					<!-- ************************************************************ -->
+					<!--                           VARIABLES                          -->
+					<!-- ************************************************************ -->
+					
 					<h2><button ng-click="histctrl.showcasehistory()" ng-disabled="histctrl.historyinprogress" class="btn btn-info btn-xs"><span class="glyphicon glyphicon-refresh"></span></button>Time Line</h2>
 					<!-- style="{{performancemesureCssStyle}}" -->
 					<div google-chart chart="chartTimeline" id="chartTimeline" style="height: 400px; width: 100%; position: relative; "></div>
@@ -403,8 +446,10 @@
 							<td style="{{histctrl.getStyleActif(variable)}}">{{variable.contextinfo}}</td>
 							<td style="{{histctrl.getStyleActif(variable)}}">{{variable.scope}}</td>
 							<td style="{{histctrl.getStyleActif(variable)}}">{{variable.name}}</td>
-							<td style="{{histctrl.getStyleActif(variable)}}">{{variable.description}}</td>
-							<td style="{{histctrl.getStyleActif(variable)}}">{{variable.value}}</td>
+							<td style="{{histctrl.getStyleActif(variable)}}">{{variable.description}}</td>							
+							<td style="{{histctrl.getStyleActif(variable)}}">
+								<div ng-if="variable.scope == 'BDM'">pid={{variable.persistenceid}}<br></div>{{variable.value}}
+							</td>
 							<td style="{{histctrl.getStyleActif(variable)}}">{{variable.type}}</td>
 							<td style="{{histctrl.getStyleActif(variable)}}">{{variable.status}}</td>
 							<td style="{{histctrl.getStyleActif(variable)}}">{{variable.datearchived | date:'medium' }}</td>
@@ -412,8 +457,14 @@
 						</tbody>
 					</table>
 					
-					<!--  processinstance -->
+					<!-- ************************************************************ -->
+					<!--                           PROCESSINSTANCE                         -->
+					<!-- ************************************************************ -->
+					
 					<h2><button ng-click="histctrl.showcasehistory()" ng-disabled="histctrl.historyinprogress" class="btn btn-info btn-xs"><span class="glyphicon glyphicon-refresh"></span></button>Process Instances</h2>
+					
+					<input type="checkbox" ng-model="histctrl.showProcessContractValues">Show All Contract Instantiation Values
+					
 					<table class="table table-striped table-hover table-condensed">
 						<tr>
 							<th class="tabletitle" style="background-color:#fcf8e3">Process Instance</th>
@@ -427,8 +478,13 @@
 							<th class="tabletitle" style="background-color:#fcf8e3">Status</th>
 						</tr>
 							
-						<tr ng-repeat="processintance in histctrl.casehistory.processintances track by $index">
-							<td style="{{histctrl.getStyleActif(processintance)}}">{{processintance.id}}</td>
+						<tbody ng-repeat="processintance in histctrl.casehistory.processintances track by $index">
+						<tr>
+							<td style="{{histctrl.getStyleActif(processintance)}}">{{processintance.id}}
+								<div ng-if="processintance.contract">
+										<input type="checkbox" ng-model="processintance.showContract">Contract
+									</div>							
+							</td>
 							<td style="{{histctrl.getStyleActif(processintance)}}">{{processintance.processname}}</td>
 							<td style="{{histctrl.getStyleActif(processintance)}}">{{processintance.processversion}}</td>
 							<td style="{{histctrl.getStyleActif(processintance)}}">{{processintance.parentact}}</td>
@@ -437,7 +493,25 @@
 							<td style="{{histctrl.getStyleActif(processintance)}}">{{processintance.parentprocessversion}}</td>
 							<td style="{{histctrl.getStyleActif(processintance)}}">{{processintance.status}}</td>
 						</tr>
+						<tr ng-if="histctrl.showProcessContractValues || processintance.showContract">
+								<td></td>
+								<td></td>
+								<td colspan="7">
+									<table>
+									<tr ng-repeat ="contract in processintance.contract" >
+										<td style="border: 1px solid black;vertical-align: top">{{contract.name}}</td>
+										<td style="border: 1px solid black;vertical-align: top">{{contract.type}}</td>
+										<td style="border: 1px solid black;vertical-align: top">{{contract.value}}</td>
+									</tr>
+									</table>
+								</td>
+							</tr> 
+						</tbody>
 					</table>
+							
+					<!-- ************************************************************ -->
+					<!--                           DOCUMENTS                          -->
+					<!-- ************************************************************ -->
 												
 					<h2><button ng-click="histctrl.showcasehistory()" ng-disabled="histctrl.historyinprogress" class="btn btn-info btn-xs"><span class="glyphicon glyphicon-refresh"></span></button>Documents</h2>
 					<table class="table table-striped table-hover table-condensed">
