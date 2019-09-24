@@ -50,7 +50,6 @@ import org.bonitasoft.engine.bpm.data.DataInstance;
 import org.bonitasoft.engine.bpm.document.Document;
 import org.bonitasoft.engine.bpm.document.DocumentCriterion;
 import org.bonitasoft.engine.bpm.flownode.ActivityInstance;
-import org.bonitasoft.engine.bpm.flownode.ActivityInstanceSearchDescriptor;
 import org.bonitasoft.engine.bpm.flownode.ActivityStates;
 import org.bonitasoft.engine.bpm.flownode.ArchivedActivityInstance;
 import org.bonitasoft.engine.bpm.flownode.ArchivedFlowNodeInstance;
@@ -71,7 +70,6 @@ import org.bonitasoft.engine.bpm.process.ArchivedProcessInstance;
 import org.bonitasoft.engine.bpm.process.ArchivedProcessInstanceNotFoundException;
 import org.bonitasoft.engine.bpm.process.DesignProcessDefinition;
 import org.bonitasoft.engine.bpm.process.ProcessDefinition;
-import org.bonitasoft.engine.bpm.process.ProcessDefinitionNotFoundException;
 import org.bonitasoft.engine.bpm.process.ProcessInstance;
 import org.bonitasoft.engine.bpm.process.ProcessInstanceNotFoundException;
 import org.bonitasoft.engine.business.data.BusinessDataReference;
@@ -81,7 +79,6 @@ import org.bonitasoft.engine.command.CommandCriterion;
 import org.bonitasoft.engine.command.CommandDescriptor;
 import org.bonitasoft.engine.command.CommandNotFoundException;
 import org.bonitasoft.engine.exception.AlreadyExistsException;
-import org.bonitasoft.engine.exception.ContractDataNotFoundException;
 import org.bonitasoft.engine.exception.CreationException;
 import org.bonitasoft.engine.exception.DeletionException;
 import org.bonitasoft.engine.exception.SearchException;
@@ -90,8 +87,6 @@ import org.bonitasoft.engine.identity.UserNotFoundException;
 import org.bonitasoft.engine.search.SearchOptionsBuilder;
 import org.bonitasoft.engine.search.SearchResult;
 import org.bonitasoft.engine.session.APISession;
-import org.bonitasoft.log.event.BEvent;
-import org.bonitasoft.log.event.BEvent.Level;
 import org.json.simple.JSONValue;
 
 import com.bonitasoft.custompage.longboard.casehistory.CaseGraphDisplay.ActivityTimeLine;
@@ -100,12 +95,13 @@ import com.bonitasoft.custompage.longboard.toolbox.LongboardToolbox;
 
 import groovy.json.JsonBuilder;
 
+@SuppressWarnings("deprecation")
 public class CaseHistory {
 
     final static Logger logger = Logger.getLogger(CaseHistory.class.getName());
 
     public static String loggerLabel = "LongBoard ##";
-    private final static BEvent eventNoCaseFound = new BEvent(CaseHistory.class.getName(), 1, Level.APPLICATIONERROR, "No Case found", "The Case does not exist (or it's a SubProcess case)", "No information will be visible", "Give a correct case");
+    // private final static BEvent eventNoCaseFound = new BEvent(CaseHistory.class.getName(), 1, Level.APPLICATIONERROR, "No Case found", "The Case does not exist (or it's a SubProcess case)", "No information will be visible", "Give a correct case");
 
     public final static String cstStatus = "status";
     public final static String cstActivityName = "activityName";
@@ -179,7 +175,7 @@ public class CaseHistory {
         // timeFinish Complete (all end connector ran) :
 
         // USER TASK
-        // timeEntry initializing.reachedStateDate or initializing.archivedDate
+        // timeEntry initializing.reachedStateDate or initializing.tdDate
         // API: YES
         // timeAvailable ready.reachedStateDate API : No
         // timeUserExecute ready.archivedDate API : YES
@@ -202,7 +198,7 @@ public class CaseHistory {
 
         @Override
         public String toString() {
-            return activityId + ": timeEntry(" + timeEntry + ") available(" + timeAvailable + ") userExecute("
+            return activityId + (activitySourceObjectId==null ? "": "("+activitySourceObjectId+")") +": timeEntry(" + timeEntry + ") available(" + timeAvailable + ") userExecute("
                     + timeUserExecute + ") complete(" + timeFinish + ")";
         }
 
@@ -214,7 +210,7 @@ public class CaseHistory {
         public boolean showSubProcess = false;
         public boolean showContract = true;
         public boolean showArchivedData;
-        public boolean loadBdmVariable=false;
+        public boolean loadBdmVariable = false;
         public String searchIndex1;
         public String searchIndex2;
         public String searchIndex3;
@@ -226,6 +222,7 @@ public class CaseHistory {
             if (jsonSt == null)
                 return caseHistoryParameter;
 
+            @SuppressWarnings("unchecked")
             final HashMap<String, Object> jsonHash = (HashMap<String, Object>) JSONValue.parse(jsonSt);
 
             caseHistoryParameter.caseId = LongboardToolbox.jsonToLong(jsonHash.get("caseId"), null);
@@ -235,7 +232,7 @@ public class CaseHistory {
             caseHistoryParameter.searchIndex4 = LongboardToolbox.jsonToString(jsonHash.get("search4"), "");
             caseHistoryParameter.searchIndex5 = LongboardToolbox.jsonToString(jsonHash.get("search5"), "");
             caseHistoryParameter.showSubProcess = LongboardToolbox.jsonToBoolean(jsonHash.get("showSubProcess"), false);
-            caseHistoryParameter.loadBdmVariable= LongboardToolbox.jsonToBoolean(jsonHash.get("loadBdmVariable"), false);
+            caseHistoryParameter.loadBdmVariable = LongboardToolbox.jsonToBoolean(jsonHash.get("loadBdmVariable"), false);
             caseHistoryParameter.showArchivedData = LongboardToolbox.jsonToBoolean(jsonHash.get("showArchivedData"),
                     false);
             return caseHistoryParameter;
@@ -264,7 +261,7 @@ public class CaseHistory {
             final ProcessAPI processAPI = TenantAPIAccessor.getProcessAPI(apiSession);
             final IdentityAPI identityAPI = TenantAPIAccessor.getIdentityAPI(apiSession);
             final BusinessDataAPI businessDataAPI = TenantAPIAccessor.getBusinessDataAPI(apiSession);
-            final CommandAPI commandAPI = TenantAPIAccessor.getCommandAPI(apiSession);
+           
 
             if (caseHistoryParameter.caseId == null) {
                 caseDetails.put("errormessage", "Give a caseId");
@@ -587,7 +584,7 @@ public class CaseHistory {
                 if (ActivityStates.READY_STATE.equals(activity.get(cstActivityState)))
                     activity.put("ACTIONEXECUTE", true);
             }
-            String s = ActivityInstanceSearchDescriptor.LAST_MODIFICATION_DATE;
+            
             caseDetails.put("actives", listActivitiesActives);
             logger.info("ACTIVE:" + listActivitiesActives.toString());
 
@@ -1213,6 +1210,7 @@ public class CaseHistory {
             parameters.put(CmdGetTimer.cstParamCommand, CmdGetTimer.cstCommandGetTimer);
 
             final Serializable resultCommand = commandAPI.execute(command.getId(), parameters);
+            @SuppressWarnings("unchecked")
             final HashMap<String, Object> resultCommandHashmap = (HashMap<String, Object>) resultCommand;
             if (resultCommandHashmap == null) {
                 logger.info("#### Timer : Can't access the command");
@@ -1419,6 +1417,7 @@ public class CaseHistory {
      * @param processDefinition
      * @param processId
      */
+    @SuppressWarnings("unchecked")
     private static void completeListDataInstanceMap(List<Map<String, Object>> listDataInstanceMap, ScopeVariable scopeVariable, StatusVariable statusVariable, List<?> listDataInstances, ProcessDefinition processDefinition, Long processId, String contextInfo) {
         for (Object dataInstance : listDataInstances) {
             Map<String, Object> mapDataInstance = new HashMap<String, Object>();
@@ -1453,7 +1452,7 @@ public class CaseHistory {
             }
             if (dataInstance instanceof Map) {
 
-                mapDataInstance.putAll((Map) dataInstance);
+                mapDataInstance.putAll((Map<String, Object>) dataInstance);
 
                 mapDataInstance.put("processinstance", processId);
                 mapDataInstance.put("processname", processDefinition == null ? "" : processDefinition.getName());
@@ -1564,7 +1563,7 @@ public class CaseHistory {
                 }
                 processInstanceMap.put("status", processInstanceDescription.isActive ? "ACTIF" : "ARCHIVED");
                 if (caseHistoryParameter.showContract)
-                    processInstanceMap.put("contract", getContractValuesBySql(processInstanceDescription.processDefinitionId, processInstanceDescription.id, null,  processAPI));
+                    processInstanceMap.put("contract", getContractValuesBySql(processInstanceDescription.processDefinitionId, processInstanceDescription.id, null, processAPI));
 
             } catch (Exception e) {
                 final StringWriter sw = new StringWriter();
@@ -1674,7 +1673,7 @@ public class CaseHistory {
         return listProcessInstances;
     }
 
-    private static String sqlDataSourceName = "java:/comp/env/bonitaSequenceManagerDS";
+    // private static String sqlDataSourceName = "java:/comp/env/bonitaSequenceManagerDS";
 
     /**
      * The ProcessAPI.getArchivedProcessDataInstances return only the LAST archived version, (not the
@@ -1872,21 +1871,21 @@ public class CaseHistory {
 
                     BusinessObjectDAOFactory daoFactory = new BusinessObjectDAOFactory();
 
+                    @SuppressWarnings("unchecked")
                     BusinessObjectDAO dao = daoFactory.createDAO(apiSession, classDao);
                     for (Long storageId : listStorageIds) {
                         if (storageId == null) {
                             continue;
                         }
                         Entity dataBdmEntity = null;
-                        if (caseHistoryParameter.loadBdmVariable)
-                        {
+                        if (caseHistoryParameter.loadBdmVariable) {
                             // method findByPersistenceId exist, but is not declare in the interface
                             try {
                                 Method m = dao.getClass().getDeclaredMethod("findByPersistenceId", Long.class);
                                 dataBdmEntity = (Entity) m.invoke(dao, storageId);
                             } catch (Exception e) {
                                 logger.severe("Method [findByPersistenceId] does not exist on this BDM Object" + e.toString());
-                           }
+                            }
                         }
                         String jsonSt = dataBdmEntity == null ? "" : new JsonBuilder(dataBdmEntity).toString();
                         // Object dataValueJson = new
@@ -1926,99 +1925,136 @@ public class CaseHistory {
         return listDataInstanceMap;
     } // end collect BDM
 
-    
     /* -------------------------------------------------------------------- */
     /*                                                                      */
     /* Contract */
     /*                                                                      */
     /* -------------------------------------------------------------------- */
-  
-    public static List<Map<String,Object>> getContractValuesBySql(Long processDefinitionId, Long processInstanceId, ArchivedHumanTaskInstance archivedHumanTask, ProcessAPI processAPI) 
-    {
-        String sqlRequest="";
-        Connection con=null;
-        PreparedStatement pstmt=null;
+
+    public static List<Map<String, Object>> getContractValuesBySql(Long processDefinitionId, Long processInstanceId, ArchivedHumanTaskInstance archivedHumanTask, ProcessAPI processAPI) {
+        String sqlRequest = "";
+        Connection con = null;
+        PreparedStatement pstmt = null;
         ResultSet rs = null;
         List<Map<String, Object>> listContracts = new ArrayList<Map<String, Object>>();
-        
-        try {
-            sqlRequest = "select ID, KIND, SCOPEID, NAME, VAL, ARCHIVEDATE from ARCH_CONTRACT_DATA where KIND=? and SCOPEID=?";
 
-            
+        try {
+            sqlRequest = "select NAME, VAL, ID, KIND, SCOPEID,  ARCHIVEDATE from ARCH_CONTRACT_DATA where KIND=? and SCOPEID=?";
+
             // search all process instance like with the root
             con = getConnection();
             pstmt = con.prepareStatement(sqlRequest);
-            
+
             if (processInstanceId != null) {
                 pstmt.setString(1, "PROCESS");
                 pstmt.setLong(2, processInstanceId);
             } else if (archivedHumanTask != null) {
                 pstmt.setString(1, "TASK");
                 pstmt.setLong(2, archivedHumanTask.getSourceObjectId());
-            }
-            else
+            } else
                 return null;
             rs = pstmt.executeQuery();
             while (rs.next()) {
                 final HashMap<String, Object> mapContract = new HashMap<String, Object>();
                 mapContract.put("name", rs.getString("NAME"));
-                Blob blob = rs.getBlob("VAL");
+                Blob valBlob =null;
+                try {
+                    valBlob = rs.getBlob("VAL");
+                    if (valBlob==null)
+                            valBlob = rs.getBlob("val");
+                }
+                catch(SQLException e)
+                {}
+                InputStream valStream =null;
+                try
+                {
+                    valStream = rs.getBinaryStream("VAL");
+                    if (valStream==null)
+                        valStream = rs.getBinaryStream("val");
+                }
+                catch(SQLException e)
+                {}
                 
                 // set the blog to a String using UTF-8
-                if ( blob != null ) 
-                {
-                    int read = 0;
-                    Reader reader = null;
-                    char[] buffer = new char[1024];
+                if (valBlob != null || valStream !=null) {
                     StringBuffer result = new StringBuffer();
-                    
-                    try
-                    {
-                        reader = new InputStreamReader(blob.getBinaryStream(), "UTF-8");
 
-                        while((read = reader.read(buffer)) != -1) 
-                        {
-                            result.append(buffer, 0, read);
+                    
+                    if (valBlob!=null)
+                    {
+                        int read = 0;
+                        char[] buffer = new char[1024];
+                        Reader reader = null;
+                        try {
+                            reader = new InputStreamReader(valBlob.getBinaryStream(), "UTF-8");
+    
+                            while ((read = reader.read(buffer)) != -1) {
+                                result.append(buffer, 0, read);
+                            }
+                        } catch (Exception ex) {
+                            throw new RuntimeException("Unable to read blob data.", ex);
+                        } finally {
+                            try {
+                                if (reader != null)
+                                    reader.close();
+                            } catch (Exception ex) {
+                            } ;
                         }
                     }
-                    catch(Exception ex)
+                    else if (valStream != null)
                     {
-                        throw new RuntimeException("Unable to read blob data.", ex);
-                    }
-                    finally
-                    {
-                        try { if(reader != null) reader.close(); } catch(Exception ex) {};
-                    }
-                String valueContract= result.toString();
-                // eliminate everything before <?xml version
-                int posXml= valueContract.indexOf("<?xml version");
-                if (posXml>-1)
-                    valueContract= valueContract.substring(posXml);
-                // files are inside the contract : so, remove it
-                int rangeBegin=0;
-                int posFileInputValue;
-                while ( (posFileInputValue=valueContract.indexOf("<org.bonitasoft.engine.bpm.contract.FileInputValue>",rangeBegin)) !=-1)
-                {
-                    // form is <org.bonitasoft.engine.bpm.contract.FileInputValue><fileName>custompage_longboard 20190824.zip</fileName><content>.....</content></org.bonitasoft.engine.bpm.contract.FileInputValue>
-                    int posContent = valueContract.indexOf("<content>", posFileInputValue);
-                    int posEndContent = valueContract.indexOf("</content>", posFileInputValue);
-                    if (posContent!=-1 && posEndContent!=-1)
-                    {
-                        valueContract = valueContract.substring(0,posContent+"<content>".length())+"..."+valueContract.substring(posEndContent);
+                        int read = 0;
+                        char[] buffer = new char[1024];
+                        Reader reader = null;
                         
+                        try {
+                            reader = new InputStreamReader(valStream, "UTF-8");
+    
+                            while ((read = reader.read(buffer)) != -1) {
+                                result.append(buffer, 0, read);
+                            }
+                        } catch (Exception ex) {
+                            throw new RuntimeException("Unable to read blob data.", ex);
+                        } finally {
+                            try {
+                                if (reader != null)
+                                    reader.close();
+                            } catch (Exception ex) {
+                            } ;
+                        }
                     }
-                    rangeBegin = posFileInputValue+10;
-                }
-                mapContract.put("value",valueContract);
+                        
                     
-                }                
+                    String valueContract = result.toString();
+                    // eliminate everything before <?xml version
+                    int posXml = valueContract.indexOf("<?xml version");
+                    if (posXml > -1)
+                        valueContract = valueContract.substring(posXml);
+                    // files are inside the contract : so, remove it
+                    int rangeBegin = 0;
+                    int posFileInputValue;
+                    while ((posFileInputValue = valueContract.indexOf("<org.bonitasoft.engine.bpm.contract.FileInputValue>", rangeBegin)) != -1) {
+                        // form is <org.bonitasoft.engine.bpm.contract.FileInputValue><fileName>custompage_longboard 20190824.zip</fileName><content>.....</content></org.bonitasoft.engine.bpm.contract.FileInputValue>
+                        int posContent = valueContract.indexOf("<content>", posFileInputValue);
+                        int posEndContent = valueContract.indexOf("</content>", posFileInputValue);
+                        if (posContent != -1 && posEndContent != -1) {
+                            valueContract = valueContract.substring(0, posContent + "<content>".length()) + "..." + valueContract.substring(posEndContent);
+
+                        }
+                        rangeBegin = posFileInputValue + 10;
+                    }
+                    mapContract.put("value", valueContract);
+
+                }
+                else
+                    mapContract.put("value", null);
                 listContracts.add(mapContract);
             }
             rs.close();
             rs = null;
             pstmt.close();
             pstmt = null;
-            
+
         } catch (Exception e) {
             final StringWriter sw = new StringWriter();
             e.printStackTrace(new PrintWriter(sw));
@@ -2049,8 +2085,7 @@ public class CaseHistory {
         }
         return listContracts;
     }
-    
-    
+
     /**
      * Collect the contract for a task
      * 

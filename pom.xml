@@ -59,7 +59,7 @@
 		<dependency>
 			<groupId>org.bonitasoft.store</groupId>
 			<artifactId>bonita-store</artifactId>
-			<version>1.0.0</version>
+			<version>1.1.0</version>
 		</dependency>
 		<dependency>
 			<groupId>org.bonitasoft.engine</groupId>
@@ -190,6 +190,7 @@
 								<argument>target/${project.artifactId}-${project.version}.zip</argument>
 								<!-- use UPDATE or DELETEANDADD -->
 								<argument>strategy:UPDATE</argument>
+								<argument>profile:BOTools</argument>
 							</arguments>
 						</configuration>
 					</execution>
