@@ -43,6 +43,7 @@ import org.bonitasoft.engine.bdm.BusinessObjectDAOFactory;
 import org.bonitasoft.engine.bdm.Entity;
 import org.bonitasoft.engine.bdm.dao.BusinessObjectDAO;
 import org.bonitasoft.engine.bpm.contract.ContractDefinition;
+import org.bonitasoft.engine.bpm.contract.FileInputValue;
 import org.bonitasoft.engine.bpm.contract.InputDefinition;
 import org.bonitasoft.engine.bpm.contract.Type;
 import org.bonitasoft.engine.bpm.data.ArchivedDataInstance;
@@ -65,11 +66,13 @@ import org.bonitasoft.engine.bpm.flownode.FlowNodeInstanceSearchDescriptor;
 import org.bonitasoft.engine.bpm.flownode.GatewayInstance;
 import org.bonitasoft.engine.bpm.flownode.HumanTaskInstance;
 import org.bonitasoft.engine.bpm.flownode.TimerEventTriggerInstance;
+import org.bonitasoft.engine.bpm.flownode.UserTaskDefinition;
 import org.bonitasoft.engine.bpm.flownode.UserTaskNotFoundException;
 import org.bonitasoft.engine.bpm.process.ArchivedProcessInstance;
 import org.bonitasoft.engine.bpm.process.ArchivedProcessInstanceNotFoundException;
 import org.bonitasoft.engine.bpm.process.DesignProcessDefinition;
 import org.bonitasoft.engine.bpm.process.ProcessDefinition;
+import org.bonitasoft.engine.bpm.process.ProcessDefinitionNotFoundException;
 import org.bonitasoft.engine.bpm.process.ProcessInstance;
 import org.bonitasoft.engine.bpm.process.ProcessInstanceNotFoundException;
 import org.bonitasoft.engine.business.data.BusinessDataReference;
@@ -79,6 +82,7 @@ import org.bonitasoft.engine.command.CommandCriterion;
 import org.bonitasoft.engine.command.CommandDescriptor;
 import org.bonitasoft.engine.command.CommandNotFoundException;
 import org.bonitasoft.engine.exception.AlreadyExistsException;
+import org.bonitasoft.engine.exception.ContractDataNotFoundException;
 import org.bonitasoft.engine.exception.CreationException;
 import org.bonitasoft.engine.exception.DeletionException;
 import org.bonitasoft.engine.exception.SearchException;
@@ -436,7 +440,7 @@ public class CaseHistory {
                     // only on archived READY state
                     if (caseHistoryParameter.showContract && flownNodeInstance instanceof ArchivedHumanTaskInstance && ("ready".equalsIgnoreCase(flownNodeInstance.getState().toString())))
                         try {
-                            List<Map<String, Object>> listContractValues = getContractValuesBySql(null, null, (ArchivedHumanTaskInstance) flownNodeInstance, processAPI);
+                            List<Map<String, Serializable>> listContractValues = getContractTaskValues( (ArchivedHumanTaskInstance) flownNodeInstance, processAPI);
                             if (listContractValues != null && listContractValues.size() > 0)
                                 mapActivity.put("contract", listContractValues);
                         } catch (Exception e) {
@@ -1563,7 +1567,11 @@ public class CaseHistory {
                 }
                 processInstanceMap.put("status", processInstanceDescription.isActive ? "ACTIF" : "ARCHIVED");
                 if (caseHistoryParameter.showContract)
-                    processInstanceMap.put("contract", getContractValuesBySql(processInstanceDescription.processDefinitionId, processInstanceDescription.id, null, processAPI));
+                {
+                    // processInstanceMap.put("contract", getContractValuesBySql(processInstanceDescription.processDefinitionId, processInstanceDescription.id, null, processAPI));
+                    processInstanceMap.put("contract", getContractInstanciationValues(processInstanceDescription, processAPI));
+                    
+                }
 
             } catch (Exception e) {
                 final StringWriter sw = new StringWriter();
@@ -1930,7 +1938,110 @@ public class CaseHistory {
     /* Contract */
     /*                                                                      */
     /* -------------------------------------------------------------------- */
+    
+    /**
+     * 
+     * @param processInstance : the case may be archived, or not, so use this object where both information are available.
+     * @param processAPI
+     * @return
+     */
+    public static List<Map<String, Serializable>> getContractInstanciationValues(ProcessInstanceDescription processInstance, ProcessAPI processAPI) {
+        List<Map<String,Serializable>> listValues = new ArrayList<Map<String,Serializable>>();
+        ContractDefinition processContract;
+        try {
+            processContract = processAPI.getProcessContract(processInstance.processDefinitionId);
+               
+            for (InputDefinition inputDefinition: processContract.getInputs() )
+            {
+                Map<String, Serializable> contractInput = new HashMap<String, Serializable>();
+                Serializable value = processAPI.getProcessInputValueAfterInitialization(processInstance.id, inputDefinition.getName());
+                contractInput.put("name", inputDefinition.getName());
+                contractInput.put("value", translateContractValue(value));
+                listValues.add( contractInput);
+            }
+        } catch (ProcessDefinitionNotFoundException e) {
+            final StringWriter sw = new StringWriter();
+            e.printStackTrace(new PrintWriter(sw));
+            logger.severe("During getContractInstanciationValues : " + e.toString() + " at " + sw.toString());
+        } catch (ContractDataNotFoundException e) {
+            final StringWriter sw = new StringWriter();
+            e.printStackTrace(new PrintWriter(sw));
+            logger.severe("During getContractInstanciationValues : " + e.toString() + " at " + sw.toString());
+        }
+        return listValues;
+    }
 
+    /**
+     * 
+     * @param processInstance
+     * @param processAPI
+     * @return
+     */
+    public static List<Map<String, Serializable>> getContractTaskValues( ArchivedHumanTaskInstance archivedTaskInstance, ProcessAPI processAPI) {
+        List<Map<String,Serializable>> listValues = new ArrayList<Map<String,Serializable>>();
+        
+        try {
+            DesignProcessDefinition pdef = processAPI.getDesignProcessDefinition(archivedTaskInstance.getProcessDefinitionId());
+            UserTaskDefinition task = (UserTaskDefinition) pdef.getFlowElementContainer().getActivity(archivedTaskInstance.getName());
+            ContractDefinition contractDefinition= task.getContract();
+            
+            for (InputDefinition inputDefinition: contractDefinition.getInputs() )
+            {
+                Map<String, Serializable> contractInput = new HashMap<String, Serializable>();
+                Serializable value = processAPI.getUserTaskContractVariableValue(archivedTaskInstance.getSourceObjectId(), inputDefinition.getName());
+                contractInput.put("name", inputDefinition.getName());
+                contractInput.put("value", translateContractValue(value));
+                listValues.add( contractInput);
+            }
+            
+        } catch (ProcessDefinitionNotFoundException e) {
+        final StringWriter sw = new StringWriter();
+        e.printStackTrace(new PrintWriter(sw));
+        logger.severe("During getContractInstanciationValues : " + e.toString() + " at " + sw.toString());
+        } catch (ContractDataNotFoundException e) {
+            final StringWriter sw = new StringWriter();
+            e.printStackTrace(new PrintWriter(sw));
+            logger.severe("During getContractInstanciationValues : " + e.toString() + " at " + sw.toString());
+        }
+        return listValues;
+    }
+
+    /**
+     * FileInput toString is not correct, and can't be JSON. So, we have to translate it...
+     * @param value
+     * @return
+     */
+    public static Serializable translateContractValue( Serializable value )
+    {
+        
+        if (value instanceof Map)
+        {
+            HashMap<String,Serializable> valueTranslated= new HashMap<String,Serializable>();
+            for (String key : ((Map<String,Serializable>) value).keySet())
+            {
+                valueTranslated.put(key, translateContractValue( (Serializable) ((Map) value).get( key )));
+            }
+            return valueTranslated;
+        } else if (value instanceof List)
+        {
+            ArrayList<Serializable> valueTranslated= new ArrayList<Serializable>();
+            for (Serializable valueIt : ((List<Serializable>) value))
+            {
+                valueTranslated.add( translateContractValue( valueIt));
+            }
+            return valueTranslated;
+        } else if (value instanceof FileInputValue)
+        {
+            HashMap<String,Serializable> valueTranslated= new HashMap<String,Serializable>();
+            valueTranslated.put("fileName", ((FileInputValue) value).getFileName());
+            valueTranslated.put("contentType", ((FileInputValue) value).getContentType());
+            // valueTranslated.put("content", ((FileInputValue) value).getContent());
+            return valueTranslated;
+        } else
+            return value;
+        
+    }
+    
     public static List<Map<String, Object>> getContractValuesBySql(Long processDefinitionId, Long processInstanceId, ArchivedHumanTaskInstance archivedHumanTask, ProcessAPI processAPI) {
         String sqlRequest = "";
         Connection con = null;
