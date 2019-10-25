@@ -123,7 +123,7 @@ public class Actions {
 					caseHistoryParameter.showSubProcess=showSubProcess;
 				logger.info("#### LongBoardCustomPage:Groovy casehistory on caseid["+request.getParameter("caseid")+"]");
 		
-				InputStream is = pageResourceProvider.getResourceAsStream("lib/CustomPageLongBoard-1.0.1.jar");
+				InputStream is = pageResourceProvider.getResourceAsStream("lib/CustomPageLongBoard-4.2.1.jar");
 				
 				//String ping= com.bonitasoft.custompage.longboard.casehistory.CaseHistory.getPing();
 				//logger.info("#### LongBoardCustomPage:Groovy Ping"+ping);
