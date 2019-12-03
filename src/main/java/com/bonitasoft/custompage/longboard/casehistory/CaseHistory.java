@@ -1515,7 +1515,7 @@ public class CaseHistory {
      * @param processAPI
      * @return
      */
-    public static ProcessInstanceList loadProcessInstances(Long rootProcessInstanceId, CaseHistoryParameter caseHistoryParameter,
+    private static ProcessInstanceList loadProcessInstances(Long rootProcessInstanceId, CaseHistoryParameter caseHistoryParameter,
             ProcessAPI processAPI) {
         ProcessInstanceList processInstanceList = new ProcessInstanceList();
 
