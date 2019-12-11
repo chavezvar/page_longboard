@@ -16,6 +16,10 @@ import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.text.SimpleDateFormat;
+import java.time.LocalDate;
+import java.time.LocalDateTime;
+import java.time.OffsetDateTime;
+import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
@@ -251,7 +255,7 @@ public class CaseHistory {
      * @return
      */
     public static Map<String, Object> getCaseDetails(CaseHistoryParameter caseHistoryParameter,
-            boolean forceDeployCommand, final InputStream inputStreamJarFile, APISession apiSession) {
+            boolean forceDeployCommand, APISession apiSession) {
 
         // Activities
         logger.info("############### start caseDetail v4.0 on [" + caseHistoryParameter.caseId + "] ShowSubProcess["
@@ -2037,8 +2041,30 @@ public class CaseHistory {
             valueTranslated.put("contentType", ((FileInputValue) value).getContentType());
             // valueTranslated.put("content", ((FileInputValue) value).getContent());
             return valueTranslated;
-        } else
+        } else if (value instanceof LocalDate)
+        {
+            // "myDateOnly":"2019-12-11T00:00:00.000Z"
+            LocalDate valueLocalDate = (LocalDate) value;
+            return valueLocalDate.format(DateTimeFormatter.ofPattern("yyyy-MM-dd'T00:00:00.000Z'"));
+        } else if (value instanceof LocalDateTime) {
+            // "myDateNoTimeZoneInput":"2019-12-11T11:25:00"
+            LocalDateTime valueLocalDateTime = (LocalDateTime) value;
+            return valueLocalDateTime.format(DateTimeFormatter.ofPattern("yyyy-MM-dd'T'HH:mm:ss"));
+        } else if (value instanceof OffsetDateTime) {
+            //"myDateTimeZoneInput":"2019-12-11T19:25:00Z"
+            OffsetDateTime valueLocalDateTime = (OffsetDateTime) value;
+            return valueLocalDateTime.format(DateTimeFormatter.ofPattern("yyyy-MM-dd'T'HH:mm:ss'Z'"));
+        } else if (value instanceof Date) {
+            //
+            // "myDateNotRecommended":"2019-12-11T00:00:00.000Z"
+            SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss.SSS'Z'");
+            return sdf.format( (Date) value);
+        } else if (value instanceof Long || value instanceof Integer || value instanceof Double || value instanceof Float) {
             return value;
+        } else if (value==null)
+            return null;
+        
+        return value.toString();
         
     }
     
