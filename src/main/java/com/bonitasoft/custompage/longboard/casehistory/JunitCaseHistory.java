@@ -44,14 +44,11 @@ public class JunitCaseHistory {
             //final IdentityAPI identityAPI = TenantAPIAccessor.getIdentityAPI(session);
             //final CommandAPI commandAPI = TenantAPIAccessor.getCommandAPI(session);
 
-            final File commandFile = new File("target/CustomPageLongBoard-1.0.1.jar");
-            FileInputStream fis;
-
-            fis = new FileInputStream(commandFile);
+           
 
             CaseHistoryParameter caseHistoryParameter = new CaseHistoryParameter();
             caseHistoryParameter.caseId = 1L;
-            final Map<String, Object> caseDetails = CaseHistory.getCaseDetails(caseHistoryParameter, true, fis, session);
+            final Map<String, Object> caseDetails = CaseHistory.getCaseDetails(caseHistoryParameter, true, session);
             System.out.println(caseDetails);
             System.out.println("-------------------- Synthesis");
             final List<HashMap<String, Object>> synthesis = (List<HashMap<String, Object>>) caseDetails.get("synthesis");
@@ -61,9 +58,6 @@ public class JunitCaseHistory {
                             + "] timeFinishConnector[" + oneLine.get("timeFinishConnector") + "]");
                 }
             }
-        } catch (final FileNotFoundException e) {
-            // TODO Auto-generated catch block
-            e.printStackTrace();
         } catch (final BonitaHomeNotSetException e) {
             // TODO Auto-generated catch block
             e.printStackTrace();

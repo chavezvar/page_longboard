@@ -13,11 +13,14 @@ import java.util.Map;
 import java.util.logging.Logger;
 
 import org.bonitasoft.engine.api.ProcessAPI;
+import org.bonitasoft.engine.bpm.BaseElement;
 import org.bonitasoft.engine.bpm.flownode.CatchEventDefinition;
 import org.bonitasoft.engine.bpm.flownode.CatchMessageEventTriggerDefinition;
 import org.bonitasoft.engine.bpm.flownode.CorrelationDefinition;
 import org.bonitasoft.engine.bpm.flownode.EventInstance;
 import org.bonitasoft.engine.bpm.flownode.FlowNodeInstance;
+import org.bonitasoft.engine.bpm.flownode.ReceiveTaskDefinition;
+import org.bonitasoft.engine.bpm.flownode.ReceiveTaskInstance;
 import org.bonitasoft.engine.bpm.flownode.SendEventException;
 import org.bonitasoft.engine.bpm.process.ProcessDefinition;
 import org.bonitasoft.engine.expression.Expression;
@@ -60,34 +63,43 @@ public class MessageOperations {
      * @param listMessages
      *        complete the list
      */
-    public static void collectMessage(CatchEventDefinition catchEventDefinition, EventInstance eventInstance, List<Map<String, Object>> listMessages) {
-        for (CatchMessageEventTriggerDefinition messageEvent : catchEventDefinition.getMessageEventTriggerDefinitions()) {
-            Map<String, Object> eventmessage = new HashMap<String, Object>();
+    public static void collectMessage(CatchEventDefinition catchEventDefinition, EventInstance eventInstance, ReceiveTaskDefinition receiveTaskDefinition, ReceiveTaskInstance receiverTask,  List<Map<String, Object>> listMessages, ProcessAPI processAPI) {
+        
+        List<CatchMessageEventTriggerDefinition> listEventTrigger = new ArrayList<>();
+        if (receiverTask!=null && receiveTaskDefinition!=null) {            
+            listEventTrigger.add( receiveTaskDefinition.getTrigger());
+        }
+        if (catchEventDefinition != null)
+            listEventTrigger.addAll( catchEventDefinition.getMessageEventTriggerDefinitions());
+        FlowNodeInstance flowNodeInstance = eventInstance==null ? receiverTask : eventInstance;
+        
+        for (CatchMessageEventTriggerDefinition messageEvent : listEventTrigger) {
+            Map<String, Object> eventmessage = new HashMap<>();
             listMessages.add(eventmessage);
-            eventmessage.put(CaseHistory.cstActivityName, eventInstance.getName());
+            eventmessage.put(CaseHistory.cstActivityName, flowNodeInstance.getName());
             eventmessage.put(CaseHistory.cstActivityMessageName, messageEvent.getMessageName());
-            eventmessage.put(CaseHistory.cstActivityId, eventInstance.getId());
+            eventmessage.put(CaseHistory.cstActivityId, flowNodeInstance.getId());
 
-            List<String> listCorrelationValue = getCorrelationValue(eventInstance);
-            List<Map<String, Object>> listCorrelations = new ArrayList<Map<String, Object>>();
+            List<String> listCorrelationValue = getCorrelationValue(flowNodeInstance);
+            List<Map<String, Object>> listCorrelations = new ArrayList<>();
             eventmessage.put(CaseHistory.cstActivityMessageCorrelationList, listCorrelations);
 
             List<CorrelationDefinition> listCorrections = messageEvent.getCorrelations();
             for (int i = 0; i < listCorrections.size(); i++) {
                 CorrelationDefinition correlationDefinition = listCorrections.get(i);
 
-                Map<String, Object> correlation = new HashMap<String, Object>();
+                Map<String, Object> correlation = new HashMap<>();
                 correlation.put(CaseHistory.cstActivityMessageVarName, correlationDefinition.getKey().getName());
                 correlation.put(CaseHistory.cstActivityMessageVarValue, i < listCorrelationValue.size() ? listCorrelationValue.get(i) : null);
 
-                correlation.put(CaseHistory.cstActivityCorrelationDefinition, correlationDefinition.getValue().getContent().toString());
+                correlation.put(CaseHistory.cstActivityCorrelationDefinition, correlationDefinition.getValue().getContent());
                 listCorrelations.add(correlation);
 
             }
-            List<Map<String, Object>> listContent = new ArrayList<Map<String, Object>>();
+            List<Map<String, Object>> listContent = new ArrayList<>();
             eventmessage.put(CaseHistory.cstActivityMessageContentList, listContent);
             for (Operation operationDefinition : messageEvent.getOperations()) {
-                Map<String, Object> operation = new HashMap<String, Object>();
+                Map<String, Object> operation = new HashMap<>();
                 operation.put(CaseHistory.cstActivityMessageVarName, operationDefinition.getRightOperand().getName());
                 listContent.add(operation);
 
@@ -104,11 +116,11 @@ public class MessageOperations {
      * @return
      */
 
-    private static List<String> getCorrelationValue(EventInstance eventInstance) {
+    private static List<String> getCorrelationValue(FlowNodeInstance flowNodeInstance) {
         Connection con = null;
         PreparedStatement pstmt = null;
         ResultSet rs = null;
-        List<String> listCorrelationValue = new ArrayList<String>();
+        List<String> listCorrelationValue = new ArrayList<>();
         try {
 
             // Get the VALUE for the correlation
@@ -127,7 +139,7 @@ public class MessageOperations {
             sqlRequest += " FLOWNODEINSTANCEID  FROM WAITING_EVENT where FLOWNODEINSTANCEID=?";
 
             pstmt = con.prepareStatement(sqlRequest);
-            pstmt.setObject(1, eventInstance.getId());
+            pstmt.setObject(1, flowNodeInstance.getId());
 
             rs = pstmt.executeQuery();
             // expect only one record
@@ -197,6 +209,7 @@ public class MessageOperations {
             if (jsonSt == null)
                 return messageParameter;
 
+            @SuppressWarnings("unchecked")
             final HashMap<String, Object> jsonHash = (HashMap<String, Object>) JSONValue.parse(jsonSt);
             messageParameter.messageName = LongboardToolbox.jsonToString(jsonHash.get("messageName"), null);
             messageParameter.activityId = LongboardToolbox.jsonToLong(jsonHash.get(CaseHistory.cstActivityId), null);

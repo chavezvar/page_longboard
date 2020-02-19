@@ -54,6 +54,7 @@ import org.bonitasoft.engine.bpm.data.ArchivedDataInstance;
 import org.bonitasoft.engine.bpm.data.DataInstance;
 import org.bonitasoft.engine.bpm.document.Document;
 import org.bonitasoft.engine.bpm.document.DocumentCriterion;
+import org.bonitasoft.engine.bpm.flownode.ActivityDefinition;
 import org.bonitasoft.engine.bpm.flownode.ActivityInstance;
 import org.bonitasoft.engine.bpm.flownode.ActivityStates;
 import org.bonitasoft.engine.bpm.flownode.ArchivedActivityInstance;
@@ -69,6 +70,8 @@ import org.bonitasoft.engine.bpm.flownode.FlowNodeInstance;
 import org.bonitasoft.engine.bpm.flownode.FlowNodeInstanceSearchDescriptor;
 import org.bonitasoft.engine.bpm.flownode.GatewayInstance;
 import org.bonitasoft.engine.bpm.flownode.HumanTaskInstance;
+import org.bonitasoft.engine.bpm.flownode.ReceiveTaskDefinition;
+import org.bonitasoft.engine.bpm.flownode.ReceiveTaskInstance;
 import org.bonitasoft.engine.bpm.flownode.TimerEventTriggerInstance;
 import org.bonitasoft.engine.bpm.flownode.UserTaskDefinition;
 import org.bonitasoft.engine.bpm.flownode.UserTaskNotFoundException;
@@ -497,12 +500,9 @@ public class CaseHistory {
                                     + eventInstance.getParentContainerId() + "] RootContainer["
                                     + eventInstance.getRootContainerId() + "]");
 
-                    DesignProcessDefinition designProcessDefinition = processAPI
-                            .getDesignProcessDefinition(eventInstance.getProcessDefinitionId());
-                    FlowElementContainerDefinition flowElementContainerDefinition = designProcessDefinition
-                            .getFlowElementContainer();
-                    FlowNodeDefinition flowNodeDefinition = flowElementContainerDefinition
-                            .getFlowNode(eventInstance.getFlownodeDefinitionId());
+                    DesignProcessDefinition designProcessDefinition = processAPI.getDesignProcessDefinition(eventInstance.getProcessDefinitionId());
+                    FlowElementContainerDefinition flowElementContainerDefinition = designProcessDefinition.getFlowElementContainer();
+                    FlowNodeDefinition flowNodeDefinition = flowElementContainerDefinition.getFlowNode(eventInstance.getFlownodeDefinitionId());
                     if (flowNodeDefinition instanceof CatchEventDefinition) {
                         CatchEventDefinition catchEventDefinition = (CatchEventDefinition) flowNodeDefinition;
                         if (catchEventDefinition.getSignalEventTriggerDefinitions() != null) {
@@ -510,12 +510,27 @@ public class CaseHistory {
 
                         } // end signal detection
                         if (catchEventDefinition.getMessageEventTriggerDefinitions() != null) {
-                            MessageOperations.collectMessage(catchEventDefinition, eventInstance, listMessages);
+                            MessageOperations.collectMessage(catchEventDefinition, eventInstance, null, null, listMessages, processAPI);
 
                         } // end message detection
                     }
                     // ActivityDefinition activityDefinition= processAPI.getDef
                     // CatchEventDefinition.getSignalEventTriggerDefinitions().getSignalName()
+                }
+                
+                // Message can be a Task Receiver message
+                List<ActivityInstance> listActivitiesInstance = processAPI.getActivities(processInstanceId, 0, 1000);
+                for (ActivityInstance activity : listActivitiesInstance) {
+                    if (activity instanceof ReceiveTaskInstance) 
+                    {                    
+                        DesignProcessDefinition designProcessDefinition = processAPI.getDesignProcessDefinition(activity.getProcessDefinitionId());
+                        FlowElementContainerDefinition flowElementContainerDefinition = designProcessDefinition.getFlowElementContainer();
+                        List<ActivityDefinition> listActivitiesDefinitions = flowElementContainerDefinition.getActivities();
+                        for (ActivityDefinition activityDef : listActivitiesDefinitions) {
+                            if (activityDef.getId() == activity.getFlownodeDefinitionId() && activityDef instanceof ReceiveTaskDefinition)
+                                MessageOperations.collectMessage(null, null, (ReceiveTaskDefinition) activityDef, (ReceiveTaskInstance) activity, listMessages, processAPI);
+                        }
+                    }
                 }
             }
             caseDetails.put("signals", listSignals);
