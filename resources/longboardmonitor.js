@@ -182,17 +182,22 @@ appCommand.controller('ShowHistoryController',
 				return "background-color: #dff0d8";
 			return "";
 		}
+		
+		this.getUrlCaseVisu = function( processinstance) {
+			return "/bonita/portal.js/#/admin/monitoring/"+processinstance.processdefinitionid+"-"+processinstance.id+"?diagramOnly=1";
+		}
+		
 		// -------------------------------------------------
 		// CancelCase
 		// -------------------------------------------------
 		this.cancelCase = function()
 		{
-			if (! confirm('cancel case'))
+			if (! confirm('Cancel case? '))
 				return;
 			var self=this;	
 			self.historyinprogress=true;
 			
-			var url='?page=custompage_longboard&action=cancelcase&caseid='+this.caseid+'&t='+Date.now();
+			var url='?page=custompage_longboard&action=cancelcase&caseid='+this.param.caseId+'&t='+Date.now();
 								
 			$http.get( url )
 				.success( function ( jsonResult ) {
@@ -212,15 +217,38 @@ appCommand.controller('ShowHistoryController',
 		// -------------------------------------------------
 		// Execute Activity
 		// -------------------------------------------------
-		this.executeActivity = function( activity )
-		{
-			if (! confirm('Do you want to execute this activity ?'))
+		this.executeActivity = function( activity ) {
+			this.notifyActivity( activity, "executeactivity", "Do you want to execute this activity?");
+		}
+		
+		this.releaseUserTask = function( activity ) {
+			this.notifyActivity( activity, "releaseUserTask", "Do you want to release the task?");
+		}
+		
+		this.replayActorFilter = function( activity ) {
+			this.notifyActivity( activity, "replayActorFilter", "Do you want to reexecute the actor filter?");
+		}
+		
+		this.updateDueDate = function( activity) {
+			this.notifyActivity( activity, "updateDueDate&updatedueDate="+activity.updateduedate,"Do you want to update the due date?");
+			
+		}
+		this.replayFailedTask = function( activity) {
+			this.notifyActivity( activity, "replayFailedTask", "Do you want to replay the Failed tasks?");
+		}
+		this.skipFailedTask = function( activity) {
+			this.notifyActivity( activity, "skipFailedTask", "Do you want to Skip the Failed tasks?");
+		} 
+		this.notifyActivity = function( activity, action, confirmMessage) {
+			if (! confirm( confirmMessage )) {
 				return;
+			}
+	
 			var self=this;
 			var selfactivity=activity;
 			self.historyinprogress=true;
 			
-			var url='?page=custompage_longboard&action=executeactivity&activityid='+activity.activityId+'&t='+Date.now();
+			var url='?page=custompage_longboard&action='+action+'&activityid='+activity.activityId+'&t='+Date.now();
 								
 			$http.get( url )
 				.success( function ( jsonResult ) {

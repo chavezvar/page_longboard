@@ -2,7 +2,7 @@
 	<modelVersion>4.0.0</modelVersion>
 	<groupId>com.bonitasoft.custompage</groupId>
 	<artifactId>CustomPageLongBoard</artifactId>
-	<version>4.3.0</version>
+	<version>4.4.0</version>
 	<name>CustomPageLongBoard</name>
 	<dependencies>
 

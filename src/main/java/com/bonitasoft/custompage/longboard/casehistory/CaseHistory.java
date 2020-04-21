@@ -46,6 +46,12 @@ import org.bonitasoft.engine.api.TenantAPIAccessor;
 import org.bonitasoft.engine.bdm.BusinessObjectDAOFactory;
 import org.bonitasoft.engine.bdm.Entity;
 import org.bonitasoft.engine.bdm.dao.BusinessObjectDAO;
+import org.bonitasoft.engine.bpm.actor.ActorInstance;
+import org.bonitasoft.engine.bpm.bar.actorMapping.Actor;
+import org.bonitasoft.engine.bpm.connector.ConnectorInstance;
+import org.bonitasoft.engine.bpm.connector.ConnectorInstanceWithFailureInfo;
+import org.bonitasoft.engine.bpm.connector.ConnectorInstancesSearchDescriptor;
+import org.bonitasoft.engine.bpm.connector.ConnectorState;
 import org.bonitasoft.engine.bpm.contract.ContractDefinition;
 import org.bonitasoft.engine.bpm.contract.FileInputValue;
 import org.bonitasoft.engine.bpm.contract.InputDefinition;
@@ -68,6 +74,7 @@ import org.bonitasoft.engine.bpm.flownode.FlowElementContainerDefinition;
 import org.bonitasoft.engine.bpm.flownode.FlowNodeDefinition;
 import org.bonitasoft.engine.bpm.flownode.FlowNodeInstance;
 import org.bonitasoft.engine.bpm.flownode.FlowNodeInstanceSearchDescriptor;
+import org.bonitasoft.engine.bpm.flownode.FlowNodeType;
 import org.bonitasoft.engine.bpm.flownode.GatewayInstance;
 import org.bonitasoft.engine.bpm.flownode.HumanTaskInstance;
 import org.bonitasoft.engine.bpm.flownode.ReceiveTaskDefinition;
@@ -95,6 +102,7 @@ import org.bonitasoft.engine.exception.DeletionException;
 import org.bonitasoft.engine.exception.SearchException;
 import org.bonitasoft.engine.identity.User;
 import org.bonitasoft.engine.identity.UserNotFoundException;
+import org.bonitasoft.engine.search.Order;
 import org.bonitasoft.engine.search.SearchOptionsBuilder;
 import org.bonitasoft.engine.search.SearchResult;
 import org.bonitasoft.engine.session.APISession;
@@ -115,11 +123,22 @@ public class CaseHistory {
     // private final static BEvent eventNoCaseFound = new BEvent(CaseHistory.class.getName(), 1, Level.APPLICATIONERROR, "No Case found", "The Case does not exist (or it's a SubProcess case)", "No information will be visible", "Give a correct case");
 
     public final static String cstStatus = "status";
+    public final static String CSTJSON_ACTIVES = "actives";
+
     public final static String cstActivityName = "activityName";
     public final static String cstActivityDescription = "description";
     public final static String cstActivityDisplayDescription = "displaydescription";
+    public final static String CSTJSON_ACTIVITY_EXPECTEDENDDATE = "expectedenddate";
+    public final static String CSTJSON_ACTIVITY_ASSIGNEEID = "assigneeid";
+    public final static String CSTJSON_ACTIVITY_ASSIGNEEUSERNAME = "assigneeusername";
+    public final static String CSTJSON_ACTIVITY_ASSIGNEEUSER = "assigneeuser";
+    public final static String CSTJSON_ACTIVITY_ACTORID = "actorid";
+    public final static String CSTJSON_ACTIVITY_ACTORNAME = "actorname";
+    public final static String CSTJSON_ACTIVITY_NBCANDIDATES= "nbcandidates";
 
-    public final static String cstPerimeter = "perimeter";
+    
+    
+    public final static String CSTJSON_PERIMETER = "perimeter";
     public final static String cstPerimeter_V_ACTIVE = "ACTIVE";
     public final static String cstPerimeter_V_ARCHIVED = "ARCHIVED";
 
@@ -138,6 +157,12 @@ public class CaseHistory {
     public final static String cstActivityParentContainer = "parentcontainer";
     public final static String cstActivityExpl = "expl";
 
+    public final static String CSTJSON_LISTCONNECTORS = "listconnectors";
+    public final static String CSTJSON_CONNECTORNAME = "connectorname";
+    public final static String CSTJSON_CONNECTORSTATE = "connectorstate";
+    public final static String CSTJSON_CONNECTORMESSAGE = "connectormessage";
+    public final static String CSTJSON_CONNECTORSTACKTRACE = "connectorstacktrace";
+    
     public final static String cstActivityDateBegin = "dateBegin";
     public final static String cstActivityDateBeginHuman = "dateBeginSt";
 
@@ -209,7 +234,7 @@ public class CaseHistory {
 
         @Override
         public String toString() {
-            return activityId + (activitySourceObjectId==null ? "": "("+activitySourceObjectId+")") +": timeEntry(" + timeEntry + ") available(" + timeAvailable + ") userExecute("
+            return activityId + (activitySourceObjectId == null ? "" : "(" + activitySourceObjectId + ")") + ": timeEntry(" + timeEntry + ") available(" + timeAvailable + ") userExecute("
                     + timeUserExecute + ") complete(" + timeFinish + ")";
         }
 
@@ -272,7 +297,6 @@ public class CaseHistory {
             final ProcessAPI processAPI = TenantAPIAccessor.getProcessAPI(apiSession);
             final IdentityAPI identityAPI = TenantAPIAccessor.getIdentityAPI(apiSession);
             final BusinessDataAPI businessDataAPI = TenantAPIAccessor.getBusinessDataAPI(apiSession);
-           
 
             if (caseHistoryParameter.caseId == null) {
                 caseDetails.put("errormessage", "Give a caseId");
@@ -281,21 +305,21 @@ public class CaseHistory {
 
             ProcessInstanceList loadAllprocessInstances = loadProcessInstances(caseHistoryParameter.caseId, caseHistoryParameter, processAPI);
 
-            if (loadAllprocessInstances.listIds.size() == 0) {
+            if (loadAllprocessInstances.listIds.isEmpty()) {
                 caseDetails.put("errormessage", "No root case Id with this ID");
             }
             // ---------------------------- Activities
-            final List<Map<String, Object>> listActivities = new ArrayList<Map<String, Object>>();
+            final List<Map<String, Object>> listActivities = new ArrayList<>();
             // keep the list of FlownodeId returned: the event should return the
             // same ID and then it's necessary to merge them
-            final Map<Long, Map<String, Object>> mapActivities = new HashMap<Long, Map<String, Object>>();
+            final Map<Long, Map<String, Object>> mapActivities = new HashMap<>();
 
-            final List<Map<String, Object>> listActivitiesActives = new ArrayList<Map<String, Object>>();
+            final List<Map<String, Object>> listActivitiesActives = new ArrayList<>();
 
             // multi instance task : if the task is declare as a multi instance,
             // it considere as finish ONLY when we see the
             // MULTI_INSTANCE_ACTIVITY / completed
-            final Set<Long> listMultiInstanceActivity = new HashSet<Long>();
+            final Set<Long> listMultiInstanceActivity = new HashSet<>();
 
             // Active tasks
             searchOptionsBuilder = new SearchOptionsBuilder(0, 1000);
@@ -318,15 +342,45 @@ public class CaseHistory {
             }
 
             for (final FlowNodeInstance activityInstance : searchFlowNode.getResult()) {
-                final HashMap<String, Object> mapActivity = new HashMap<String, Object>();
+                final HashMap<String, Object> mapActivity = new HashMap<>();
 
-                mapActivity.put(cstPerimeter, cstPerimeter_V_ACTIVE);
+                mapActivity.put(CSTJSON_PERIMETER, cstPerimeter_V_ACTIVE);
 
                 mapActivity.put(cstActivityName, activityInstance.getName());
                 mapActivity.put(cstActivityId, activityInstance.getId());
                 mapActivity.put(cstActivityIdDesc, activityInstance.getId());
                 mapActivity.put(cstActivityDescription, activityInstance.getDescription());
                 mapActivity.put(cstActivityDisplayDescription, activityInstance.getDisplayDescription());
+
+                // Human task
+                if (activityInstance instanceof HumanTaskInstance) {
+                    HumanTaskInstance humanTaskInstance = (HumanTaskInstance) activityInstance;
+                    Date date = humanTaskInstance.getExpectedEndDate();
+                    if (date != null)
+                        mapActivity.put(CSTJSON_ACTIVITY_EXPECTEDENDDATE, sdf.format(date));
+                    
+                    Long actorId = humanTaskInstance.getActorId();
+                    if (actorId!=null)
+                    {
+                        ActorInstance actor = processAPI.getActor(actorId);
+                        mapActivity.put(CSTJSON_ACTIVITY_ACTORID, actor.getId());
+                        mapActivity.put(CSTJSON_ACTIVITY_ACTORNAME, actor.getName());
+                        SearchResult<User> searchCandidates = processAPI.searchUsersWhoCanExecutePendingHumanTask(humanTaskInstance.getId(), new SearchOptionsBuilder(0,10000).done());
+                        mapActivity.put(CSTJSON_ACTIVITY_NBCANDIDATES, searchCandidates.getCount());
+                        
+                    }
+                    long assigneeId = humanTaskInstance.getAssigneeId();
+                    mapActivity.put(CSTJSON_ACTIVITY_ASSIGNEEID, assigneeId);
+                    if (assigneeId > 0) {
+                        try {
+                            User user = identityAPI.getUser(assigneeId);
+                            mapActivity.put(CSTJSON_ACTIVITY_ASSIGNEEUSERNAME, user.getUserName());
+                            mapActivity.put(CSTJSON_ACTIVITY_ASSIGNEEUSER, user.getFirstName() + " " + user.getLastName());
+                        } catch (Exception e) {
+                        }
+
+                    }
+                }
 
                 Date date = activityInstance.getLastUpdateDate();
                 if (activityInstance instanceof GatewayInstance) {
@@ -343,11 +397,11 @@ public class CaseHistory {
                 // mapActivity.put("isterminal",
                 // activityInstance.().toString());
                 mapActivity.put(cstActivityType, activityInstance.getType().toString());
-                mapActivity.put(cstActivityState, activityInstance.getState().toString());
+                mapActivity.put(cstActivityState, activityInstance.getState());
                 mapActivity.put(cstActivityFlownodeDefId, activityInstance.getFlownodeDefinitionId());
                 mapActivity.put(cstActivityParentContainer, activityInstance.getParentContainerId());
 
-                if ("MULTI_INSTANCE_ACTIVITY".equals(activityInstance.getType().toString())) {
+                if (FlowNodeType.MULTI_INSTANCE_ACTIVITY.equals(activityInstance.getType())) {
                     listMultiInstanceActivity.add(activityInstance.getFlownodeDefinitionId());
                 }
                 mapActivity.put(cstActivityExpl,
@@ -363,7 +417,7 @@ public class CaseHistory {
                         mapActivity.put("ExecutedBy", userExecuted);
                     } catch (final UserNotFoundException ue) {
                         mapActivity.put("ExecutedBy", "UserNotFound id=" + activityInstance.getExecutedBy());
-                    } ;
+                    }
 
                 }
                 if (caseHistoryParameter.showContract && activityInstance instanceof HumanTaskInstance)
@@ -375,6 +429,29 @@ public class CaseHistory {
                     }
                 logger.info("#### casehistory [" + mapActivity + "]");
 
+                if (activityInstance.getState().equals( ActivityStates.FAILED_STATE)) {
+                    // search and load connectors
+                    List<Map<String,Object>> listConnectorMap = new ArrayList<>();
+                    mapActivity.put(CSTJSON_LISTCONNECTORS, listConnectorMap);
+
+                    SearchOptionsBuilder sobConnector = new SearchOptionsBuilder(0,100);
+                    sobConnector.filter( ConnectorInstancesSearchDescriptor.CONTAINER_ID, activityInstance.getId());
+                    sobConnector.sort(ConnectorInstancesSearchDescriptor.EXECUTION_ORDER,Order.ASC);
+                    SearchResult<ConnectorInstance> searchConnectors = processAPI.searchConnectorInstances( sobConnector.done());
+                    for (ConnectorInstance connector : searchConnectors.getResult()) {
+                        final HashMap<String, Object> mapConnector = new HashMap<>();
+                        listConnectorMap.add( mapConnector);
+                        mapConnector.put(CSTJSON_CONNECTORNAME, connector.getName());
+                        mapConnector.put(CSTJSON_CONNECTORSTATE, connector.getState().toString().toLowerCase().replaceAll("_", " "));
+                        if (connector.getState().equals(ConnectorState.FAILED)) {
+                            ConnectorInstanceWithFailureInfo connectorInfo = getConnectorInformationError( connector, apiSession);
+                            if (connectorInfo!=null) {
+                                mapConnector.put(CSTJSON_CONNECTORMESSAGE, connectorInfo.getExceptionMessage());
+                                mapConnector.put(CSTJSON_CONNECTORSTACKTRACE, connectorInfo.getStackTrace());
+                            }
+                        }
+                    }
+                }
                 listActivities.add(mapActivity);
                 mapActivities.put(activityInstance.getId(), mapActivity);
             }
@@ -383,7 +460,7 @@ public class CaseHistory {
 
             // ------------------- archived   
             // Attention, same activity will be returned multiple time
-            Set<Long> setActivitiesRetrieved = new HashSet<Long>();
+            Set<Long> setActivitiesRetrieved = new HashSet<>();
             for (Long processInstanceId : loadAllprocessInstances.listIds) {
 
                 searchOptionsBuilder = new SearchOptionsBuilder(0, 1000);
@@ -406,7 +483,7 @@ public class CaseHistory {
                     setActivitiesRetrieved.add(flownNodeInstance.getId());
 
                     final HashMap<String, Object> mapActivity = new HashMap<String, Object>();
-                    mapActivity.put(cstPerimeter, cstPerimeter_V_ARCHIVED);
+                    mapActivity.put(CSTJSON_PERIMETER, cstPerimeter_V_ARCHIVED);
                     mapActivity.put(cstActivityName, flownNodeInstance.getName());
                     mapActivity.put(cstActivityId, flownNodeInstance.getId());
                     mapActivity.put(cstActivitySourceId, flownNodeInstance.getSourceObjectId());
@@ -447,7 +524,7 @@ public class CaseHistory {
                     // only on archived READY state
                     if (caseHistoryParameter.showContract && flownNodeInstance instanceof ArchivedHumanTaskInstance && ("ready".equalsIgnoreCase(flownNodeInstance.getState().toString())))
                         try {
-                            List<Map<String, Serializable>> listContractValues = getContractTaskValues( (ArchivedHumanTaskInstance) flownNodeInstance, processAPI);
+                            List<Map<String, Serializable>> listContractValues = getContractTaskValues((ArchivedHumanTaskInstance) flownNodeInstance, processAPI);
                             if (listContractValues != null && listContractValues.size() > 0)
                                 mapActivity.put("contract", listContractValues);
                         } catch (Exception e) {
@@ -462,8 +539,8 @@ public class CaseHistory {
                 }
             }
             // ------------------------------ events
-            List<Map<String, Object>> listSignals = new ArrayList<Map<String, Object>>();
-            List<Map<String, Object>> listMessages = new ArrayList<Map<String, Object>>();
+            List<Map<String, Object>> listSignals = new ArrayList<>();
+            List<Map<String, Object>> listMessages = new ArrayList<>();
             for (Long processInstanceId : loadAllprocessInstances.listIds) {
                 final List<EventInstance> listEventInstance = processAPI.getEventInstances(processInstanceId, 0,
                         1000, EventCriterion.NAME_ASC);
@@ -474,7 +551,7 @@ public class CaseHistory {
                     else {
                         mapActivity = new HashMap<String, Object>();
                         listActivities.add(mapActivity);
-                        mapActivity.put(cstPerimeter, "ARCHIVED");
+                        mapActivity.put(CSTJSON_PERIMETER, "ARCHIVED");
                         mapActivity.put(cstActivityName, eventInstance.getName());
                         mapActivity.put(cstActivityId, eventInstance.getId());
                         mapActivity.put(cstActivityIdDesc, eventInstance.getId());
@@ -517,12 +594,11 @@ public class CaseHistory {
                     // ActivityDefinition activityDefinition= processAPI.getDef
                     // CatchEventDefinition.getSignalEventTriggerDefinitions().getSignalName()
                 }
-                
+
                 // Message can be a Task Receiver message
                 List<ActivityInstance> listActivitiesInstance = processAPI.getActivities(processInstanceId, 0, 1000);
                 for (ActivityInstance activity : listActivitiesInstance) {
-                    if (activity instanceof ReceiveTaskInstance) 
-                    {                    
+                    if (activity instanceof ReceiveTaskInstance) {
                         DesignProcessDefinition designProcessDefinition = processAPI.getDesignProcessDefinition(activity.getProcessDefinitionId());
                         FlowElementContainerDefinition flowElementContainerDefinition = designProcessDefinition.getFlowElementContainer();
                         List<ActivityDefinition> listActivitiesDefinitions = flowElementContainerDefinition.getActivities();
@@ -537,7 +613,7 @@ public class CaseHistory {
             caseDetails.put("messages", listMessages);
 
             // -------------------------------------------- search the timer
-            List<Map<String, Object>> listTimers = new ArrayList<Map<String, Object>>();
+            List<Map<String, Object>> listTimers = new ArrayList<>();
             for (Long processInstanceId : loadAllprocessInstances.listIds) {
 
                 SearchResult<TimerEventTriggerInstance> searchTimer = processAPI.searchTimerEventTriggerInstances(
@@ -584,14 +660,14 @@ public class CaseHistory {
             caseDetails.put("timers", listTimers);
 
             // --- set the activities now that we updated it
-            sortTheList(listActivities, cstActivityDate);
 
-            caseDetails.put("activities", listActivities);
+
+            caseDetails.put("activities", sortTheList(listActivities, cstActivityDate ));
 
             // -------------------------- Calcul the Active list
             Map<Long, Map<String, Object>> mapActive = new HashMap<Long, Map<String, Object>>();
             for (Map<String, Object> activity : listActivities) {
-                if (cstPerimeter_V_ARCHIVED.equals(activity.get(cstPerimeter)))
+                if (cstPerimeter_V_ARCHIVED.equals(activity.get(CSTJSON_PERIMETER)))
                     continue;
                 Long idActivity = (Long) activity.get(cstActivityId);
                 mapActive.put(idActivity, activity);
@@ -607,15 +683,15 @@ public class CaseHistory {
                 if (ActivityStates.READY_STATE.equals(activity.get(cstActivityState)))
                     activity.put("ACTIONEXECUTE", true);
             }
-            
-            caseDetails.put("actives", listActivitiesActives);
+
+            caseDetails.put(CSTJSON_ACTIVES, listActivitiesActives);
             logger.info("ACTIVE:" + listActivitiesActives.toString());
 
             // process instance
             caseDetails.put("processintances", loadAllprocessInstances.listDetails);
 
             // -------------------------------------------- Variables
-            List<Map<String, Object>> listDataInstanceMap = new ArrayList<Map<String, Object>>();
+            List<Map<String, Object>> listDataInstanceMap = new ArrayList<>();
 
             // process variables
             listDataInstanceMap.addAll(loadProcessVariables(caseHistoryParameter.caseId, caseHistoryParameter.showSubProcess, mapActivities, processAPI));
@@ -626,7 +702,7 @@ public class CaseHistory {
             caseDetails.put("variables", listDataInstanceMap);
 
             // -------------------------------------------- Documents
-            List<Map<String, Object>> listDocumentsMap = new ArrayList<Map<String, Object>>();
+            List<Map<String, Object>> listDocumentsMap = new ArrayList<>();
 
             List<ProcessInstanceDescription> listProcessInstances = getAllProcessInstance(caseHistoryParameter.caseId,
                     caseHistoryParameter.showSubProcess, processAPI);
@@ -659,10 +735,10 @@ public class CaseHistory {
                 }
             }
             sortTheList(listDocumentsMap, "processinstance;name;docindex");
-            caseDetails.put("documents", listDocumentsMap);
+            caseDetails.put("documents",  sortTheList(listDocumentsMap, "id"));
 
             // ---------------------------------- Synthesis
-            final Map<Long, Map<String, Object>> mapSynthesis = new HashMap<Long, Map<String, Object>>();
+            final Map<Long, Map<String, Object>> mapSynthesis = new HashMap<>();
             for (final Map<String, Object> mapActivity : listActivities) {
 
                 final Long flowNodedefid = Long.valueOf((Long) mapActivity.get(cstActivityFlownodeDefId));
@@ -759,7 +835,7 @@ public class CaseHistory {
                         // attention ! if the task is a MULTI The task is
                         // considere
                         if (listMultiInstanceActivity.contains(flowNodedefid)) {
-                            if ("MULTI_INSTANCE_ACTIVITY".equals(mapRunActivity.get(cstActivityType))) {
+                            if (FlowNodeType.MULTI_INSTANCE_ACTIVITY.toString().equals(mapRunActivity.get(cstActivityType))) {
                                 isReallyTerminated = true;
                             } else {
                                 isReallyTerminated = false;
@@ -830,7 +906,7 @@ public class CaseHistory {
                     }
 
                     // multi instance is not part of the sum calculation
-                    if ("MULTI_INSTANCE_ACTIVITY".equals(timeCollect.activityType)) {
+                    if (FlowNodeType.MULTI_INSTANCE_ACTIVITY.toString().equals(timeCollect.activityType)) {
                         continue;
                     }
                     if (timeCollect.timeEntry != null && timeCollect.timeAvailable != null) {
@@ -1127,6 +1203,7 @@ public class CaseHistory {
         return "-";
     }
 
+  
     /**
      * return a string every time (if null, return "")
      * 
@@ -1522,8 +1599,8 @@ public class CaseHistory {
      */
     public static class ProcessInstanceList {
 
-        List<Map<String, Object>> listDetails = new ArrayList<Map<String, Object>>();;
-        List<Long> listIds = new ArrayList<Long>();;
+        List<Map<String, Object>> listDetails = new ArrayList<>();;
+        List<Long> listIds = new ArrayList<>();;
     }
 
     /**
@@ -1544,7 +1621,7 @@ public class CaseHistory {
             try {
                 ProcessDefinition processDefinition = processAPI.getProcessDefinition(processInstanceDescription.processDefinitionId);
 
-                Map<String, Object> processInstanceMap = new HashMap<String, Object>();
+                Map<String, Object> processInstanceMap = new HashMap<>();
                 processInstanceList.listDetails.add(processInstanceMap);
                 processInstanceList.listIds.add(processInstanceDescription.id);
 
@@ -1552,6 +1629,9 @@ public class CaseHistory {
 
                 processInstanceMap.put("processname", processDefinition.getName());
                 processInstanceMap.put("processversion", processDefinition.getVersion());
+                // ID is too big for JSON / HTML : then, use a STRING
+                processInstanceMap.put("processdefinitionid", String.valueOf(processDefinition.getId()));
+
                 if (processInstanceDescription.callerId != null && processInstanceDescription.callerId > 0) {
                     boolean foundIt = false;
                     try {
@@ -1585,11 +1665,10 @@ public class CaseHistory {
 
                 }
                 processInstanceMap.put("status", processInstanceDescription.isActive ? "ACTIF" : "ARCHIVED");
-                if (caseHistoryParameter.showContract)
-                {
+                if (caseHistoryParameter.showContract) {
                     // processInstanceMap.put("contract", getContractValuesBySql(processInstanceDescription.processDefinitionId, processInstanceDescription.id, null, processAPI));
                     processInstanceMap.put("contract", getContractInstanciationValues(processInstanceDescription, processAPI));
-                    
+
                 }
 
             } catch (Exception e) {
@@ -1957,26 +2036,24 @@ public class CaseHistory {
     /* Contract */
     /*                                                                      */
     /* -------------------------------------------------------------------- */
-    
+
     /**
-     * 
      * @param processInstance : the case may be archived, or not, so use this object where both information are available.
      * @param processAPI
      * @return
      */
     public static List<Map<String, Serializable>> getContractInstanciationValues(ProcessInstanceDescription processInstance, ProcessAPI processAPI) {
-        List<Map<String,Serializable>> listValues = new ArrayList<Map<String,Serializable>>();
+        List<Map<String, Serializable>> listValues = new ArrayList<Map<String, Serializable>>();
         ContractDefinition processContract;
         try {
             processContract = processAPI.getProcessContract(processInstance.processDefinitionId);
-               
-            for (InputDefinition inputDefinition: processContract.getInputs() )
-            {
+
+            for (InputDefinition inputDefinition : processContract.getInputs()) {
                 Map<String, Serializable> contractInput = new HashMap<String, Serializable>();
                 Serializable value = processAPI.getProcessInputValueAfterInitialization(processInstance.id, inputDefinition.getName());
                 contractInput.put("name", inputDefinition.getName());
                 contractInput.put("value", translateContractValue(value));
-                listValues.add( contractInput);
+                listValues.add(contractInput);
             }
         } catch (ProcessDefinitionNotFoundException e) {
             final StringWriter sw = new StringWriter();
@@ -1991,32 +2068,30 @@ public class CaseHistory {
     }
 
     /**
-     * 
      * @param processInstance
      * @param processAPI
      * @return
      */
-    public static List<Map<String, Serializable>> getContractTaskValues( ArchivedHumanTaskInstance archivedTaskInstance, ProcessAPI processAPI) {
-        List<Map<String,Serializable>> listValues = new ArrayList<Map<String,Serializable>>();
-        
+    public static List<Map<String, Serializable>> getContractTaskValues(ArchivedHumanTaskInstance archivedTaskInstance, ProcessAPI processAPI) {
+        List<Map<String, Serializable>> listValues = new ArrayList<Map<String, Serializable>>();
+
         try {
             DesignProcessDefinition pdef = processAPI.getDesignProcessDefinition(archivedTaskInstance.getProcessDefinitionId());
             UserTaskDefinition task = (UserTaskDefinition) pdef.getFlowElementContainer().getActivity(archivedTaskInstance.getName());
-            ContractDefinition contractDefinition= task.getContract();
-            
-            for (InputDefinition inputDefinition: contractDefinition.getInputs() )
-            {
+            ContractDefinition contractDefinition = task.getContract();
+
+            for (InputDefinition inputDefinition : contractDefinition.getInputs()) {
                 Map<String, Serializable> contractInput = new HashMap<String, Serializable>();
                 Serializable value = processAPI.getUserTaskContractVariableValue(archivedTaskInstance.getSourceObjectId(), inputDefinition.getName());
                 contractInput.put("name", inputDefinition.getName());
                 contractInput.put("value", translateContractValue(value));
-                listValues.add( contractInput);
+                listValues.add(contractInput);
             }
-            
+
         } catch (ProcessDefinitionNotFoundException e) {
-        final StringWriter sw = new StringWriter();
-        e.printStackTrace(new PrintWriter(sw));
-        logger.severe("During getContractInstanciationValues : " + e.toString() + " at " + sw.toString());
+            final StringWriter sw = new StringWriter();
+            e.printStackTrace(new PrintWriter(sw));
+            logger.severe("During getContractInstanciationValues : " + e.toString() + " at " + sw.toString());
         } catch (ContractDataNotFoundException e) {
             final StringWriter sw = new StringWriter();
             e.printStackTrace(new PrintWriter(sw));
@@ -2027,37 +2102,31 @@ public class CaseHistory {
 
     /**
      * FileInput toString is not correct, and can't be JSON. So, we have to translate it...
+     * 
      * @param value
      * @return
      */
-    public static Serializable translateContractValue( Serializable value )
-    {
-        
-        if (value instanceof Map)
-        {
-            HashMap<String,Serializable> valueTranslated= new HashMap<String,Serializable>();
-            for (String key : ((Map<String,Serializable>) value).keySet())
-            {
-                valueTranslated.put(key, translateContractValue( (Serializable) ((Map) value).get( key )));
+    public static Serializable translateContractValue(Serializable value) {
+
+        if (value instanceof Map) {
+            HashMap<String, Serializable> valueTranslated = new HashMap<String, Serializable>();
+            for (String key : ((Map<String, Serializable>) value).keySet()) {
+                valueTranslated.put(key, translateContractValue((Serializable) ((Map) value).get(key)));
             }
             return valueTranslated;
-        } else if (value instanceof List)
-        {
-            ArrayList<Serializable> valueTranslated= new ArrayList<Serializable>();
-            for (Serializable valueIt : ((List<Serializable>) value))
-            {
-                valueTranslated.add( translateContractValue( valueIt));
+        } else if (value instanceof List) {
+            ArrayList<Serializable> valueTranslated = new ArrayList<Serializable>();
+            for (Serializable valueIt : ((List<Serializable>) value)) {
+                valueTranslated.add(translateContractValue(valueIt));
             }
             return valueTranslated;
-        } else if (value instanceof FileInputValue)
-        {
-            HashMap<String,Serializable> valueTranslated= new HashMap<String,Serializable>();
+        } else if (value instanceof FileInputValue) {
+            HashMap<String, Serializable> valueTranslated = new HashMap<String, Serializable>();
             valueTranslated.put("fileName", ((FileInputValue) value).getFileName());
             valueTranslated.put("contentType", ((FileInputValue) value).getContentType());
             // valueTranslated.put("content", ((FileInputValue) value).getContent());
             return valueTranslated;
-        } else if (value instanceof LocalDate)
-        {
+        } else if (value instanceof LocalDate) {
             // "myDateOnly":"2019-12-11T00:00:00.000Z"
             LocalDate valueLocalDate = (LocalDate) value;
             return valueLocalDate.format(DateTimeFormatter.ofPattern("yyyy-MM-dd'T00:00:00.000Z'"));
@@ -2073,16 +2142,16 @@ public class CaseHistory {
             //
             // "myDateNotRecommended":"2019-12-11T00:00:00.000Z"
             SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss.SSS'Z'");
-            return sdf.format( (Date) value);
+            return sdf.format((Date) value);
         } else if (value instanceof Long || value instanceof Integer || value instanceof Double || value instanceof Float) {
             return value;
-        } else if (value==null)
+        } else if (value == null)
             return null;
-        
+
         return value.toString();
-        
+
     }
-    
+
     public static List<Map<String, Object>> getContractValuesBySql(Long processDefinitionId, Long processInstanceId, ArchivedHumanTaskInstance archivedHumanTask, ProcessAPI processAPI) {
         String sqlRequest = "";
         Connection con = null;
@@ -2109,37 +2178,32 @@ public class CaseHistory {
             while (rs.next()) {
                 final HashMap<String, Object> mapContract = new HashMap<String, Object>();
                 mapContract.put("name", rs.getString("NAME"));
-                Blob valBlob =null;
+                Blob valBlob = null;
                 try {
                     valBlob = rs.getBlob("VAL");
-                    if (valBlob==null)
-                            valBlob = rs.getBlob("val");
+                    if (valBlob == null)
+                        valBlob = rs.getBlob("val");
+                } catch (SQLException e) {
                 }
-                catch(SQLException e)
-                {}
-                InputStream valStream =null;
-                try
-                {
+                InputStream valStream = null;
+                try {
                     valStream = rs.getBinaryStream("VAL");
-                    if (valStream==null)
+                    if (valStream == null)
                         valStream = rs.getBinaryStream("val");
+                } catch (SQLException e) {
                 }
-                catch(SQLException e)
-                {}
-                
+
                 // set the blog to a String using UTF-8
-                if (valBlob != null || valStream !=null) {
+                if (valBlob != null || valStream != null) {
                     StringBuffer result = new StringBuffer();
 
-                    
-                    if (valBlob!=null)
-                    {
+                    if (valBlob != null) {
                         int read = 0;
                         char[] buffer = new char[1024];
                         Reader reader = null;
                         try {
                             reader = new InputStreamReader(valBlob.getBinaryStream(), "UTF-8");
-    
+
                             while ((read = reader.read(buffer)) != -1) {
                                 result.append(buffer, 0, read);
                             }
@@ -2152,16 +2216,14 @@ public class CaseHistory {
                             } catch (Exception ex) {
                             } ;
                         }
-                    }
-                    else if (valStream != null)
-                    {
+                    } else if (valStream != null) {
                         int read = 0;
                         char[] buffer = new char[1024];
                         Reader reader = null;
-                        
+
                         try {
                             reader = new InputStreamReader(valStream, "UTF-8");
-    
+
                             while ((read = reader.read(buffer)) != -1) {
                                 result.append(buffer, 0, read);
                             }
@@ -2175,8 +2237,7 @@ public class CaseHistory {
                             } ;
                         }
                     }
-                        
-                    
+
                     String valueContract = result.toString();
                     // eliminate everything before <?xml version
                     int posXml = valueContract.indexOf("<?xml version");
@@ -2197,8 +2258,7 @@ public class CaseHistory {
                     }
                     mapContract.put("value", valueContract);
 
-                }
-                else
+                } else
                     mapContract.put("value", null);
                 listContracts.add(mapContract);
             }
@@ -2339,11 +2399,11 @@ public class CaseHistory {
             listDatasourceToCheck.add(dataSourceString);
 
         for (String dataSourceString : listDatasourceToCheck) {
-            logger.info(loggerLabel + ".getDataSourceConnection() check[" + dataSourceString + "]");
+            // logger.info(loggerLabel + ".getDataSourceConnection() check[" + dataSourceString + "]");
             try {
                 final Context ctx = new InitialContext();
                 final DataSource dataSource = (DataSource) ctx.lookup(dataSourceString);
-                logger.info(loggerLabel + ".getDataSourceConnection() [" + dataSourceString + "] isOk");
+                logger.fine(loggerLabel + ".getDataSourceConnection() [" + dataSourceString + "] isOk");
                 return dataSource.getConnection();
 
             } catch (NamingException e) {
@@ -2366,7 +2426,7 @@ public class CaseHistory {
      * @param attributName : list of attribut separate par ; Example: name;docindex,processinstance .
      *        If name hjave the same value, compare docindex and so on.
      */
-    private static void sortTheList(List<Map<String, Object>> listToSort, final String attributName) {
+    private static List<Map<String, Object>> sortTheList(List<Map<String, Object>> listToSort, final String attributName) {
 
         Collections.sort(listToSort, new Comparator<Map<String, Object>>() {
 
@@ -2392,7 +2452,34 @@ public class CaseHistory {
                 }
                 return 0;
             }
-        });;
+        });
+        return listToSort;
+        
     }
+    
+    /**
+     * we have to use the reflection method : this class is available only on the COM api
+     * @param connector
+     * @return
+     */
+    private static ConnectorInstanceWithFailureInfo getConnectorInformationError( ConnectorInstance connector, APISession apiSession) {
+        try {
+            // first, call the com.bonitasoft.engine.api.TenantAPIAccessor : this one can give us a com.processAPI
+            Class<?> classApiAccessor = Class.forName("com.bonitasoft.engine.api.TenantAPIAccessor");
+            
+            Method methodGetProcessAPI = classApiAccessor.getMethod("getProcessAPI", APISession.class);
+            Object comProcessAPI = methodGetProcessAPI.invoke(null, apiSession);
+            Method methodGetConnectorInstance = comProcessAPI.getClass().getMethod("getConnectorInstanceWithFailureInformation", long.class);
+            // ConnectorInstanceWithFailureInfo is a ORG object, so it's fine
+            ConnectorInstanceWithFailureInfo connectorInstanceWithFailureInfo = (ConnectorInstanceWithFailureInfo) methodGetConnectorInstance.invoke(comProcessAPI, connector.getId());
+            return connectorInstanceWithFailureInfo;
+        }
+        catch(Exception e) {
+            // it's a community execution : method does not exist
+            return null;
+        }
+    }
+
+
 
 }

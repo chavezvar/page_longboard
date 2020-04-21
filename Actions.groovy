@@ -101,6 +101,7 @@ public class Actions {
 			
 			APISession session = pageContext.getApiSession()
 			ProcessAPI processAPI = TenantAPIAccessor.getProcessAPI(session);
+            
 			IdentityAPI identityApi = TenantAPIAccessor.getIdentityAPI(session);
 			CommandAPI commandAPI = TenantAPIAccessor.getCommandAPI(session);
 			BusinessDataAPI businessDataAPI = TenantAPIAccessor.getBusinessDataAPI(session);
@@ -138,16 +139,47 @@ public class Actions {
 			}
 			else if( "cancelcase".equals(action))
 			{
-				int caseid = Index.getIntegerParameter(request,"caseid",0);
+				long caseid = Index.getIntegerParameter(request,"caseid",0);
 				logger.info("#### LongBoardCustomPage:Groovy cancelCase caseid["+caseid+"]");
 				actionAnswer.setResponse( com.bonitasoft.custompage.longboard.casehistory.CaseOperations.cancelCase(caseid, processAPI));
 			}		
-			else if( "executeactivity".equals(action))
-			{
-				int activityid = Index.getIntegerParameter(request,"activityid",0);
-				logger.info("#### LongBoardCustomPage:Groovy Exzecute activityud["+activityid+"]");
+			else if( "executeactivity".equals(action)) {
+				long activityid = Index.getIntegerParameter(request,"activityid",0);
+				logger.info("#### LongBoardCustomPage:Groovy Execute activityId["+activityid+"]");
 				actionAnswer.setResponse( com.bonitasoft.custompage.longboard.casehistory.CaseOperations.executeActivity(activityid, session.getUserId(), processAPI));
-			}		
+			}	
+                        
+            else if( "releaseUserTask".equals(action)) {
+                    long activityid = Index.getIntegerParameter(request,"activityid",0);
+                    logger.info("#### LongBoardCustomPage:Groovy Execute releaseUserTask["+activityid+"]");
+                    actionAnswer.setResponse( com.bonitasoft.custompage.longboard.casehistory.CaseOperations.releaseUserTask(activityid, session.getUserId(), processAPI));
+            }
+
+            else if( "replayActorFilter".equals(action)) {
+                    long activityid = Index.getIntegerParameter(request,"activityid",0);
+                    logger.info("#### LongBoardCustomPage:Groovy Execute ReplayActorFilter["+activityid+"]");
+                    actionAnswer.setResponse( com.bonitasoft.custompage.longboard.casehistory.CaseOperations.replayActorFilter(activityid, session.getUserId(), processAPI));
+            }
+            
+            else if( "updateDueDate".equals(action)) {
+                    long activityid      = Index.getIntegerParameter(request,"activityid",0);
+                    int delayInMinutes  = Index.getIntegerParameter(request,"updatedueDate",0);                    
+                    logger.info("#### LongBoardCustomPage:Groovy Execute ReplayActorFilter["+activityid+"]");
+                    actionAnswer.setResponse( com.bonitasoft.custompage.longboard.casehistory.CaseOperations.updateDueDate(activityid, delayInMinutes, session.getUserId(), processAPI));
+            }
+            
+            else if( "replayFailedTask".equals(action)) {
+                    int activityid      = Index.getIntegerParameter(request,"activityid",0);                   
+                    logger.info("#### LongBoardCustomPage:Groovy Execute ReplayActorFilter["+activityid+"]");
+                    actionAnswer.setResponse( com.bonitasoft.custompage.longboard.casehistory.CaseOperations.replayFailedTask(activityid,session.getUserId(), processAPI));
+            }
+            
+            else if( "skipFailedTask".equals(action)) {
+                int activityid      = Index.getIntegerParameter(request,"activityid",0);
+                logger.info("#### LongBoardCustomPage:Groovy Execute skipTask["+activityid+"]");
+                actionAnswer.setResponse( com.bonitasoft.custompage.longboard.casehistory.CaseOperations.skipFailedTask(activityid,session.getUserId(), processAPI));
+        }
+            
 			else if ("updatetimer".equals(action))
 			{
 				TimerParameter timerParameter = TimerParameter.getInstanceFromJson( paramJsonSt );
