@@ -57,7 +57,7 @@ public class CaseOperations {
      * @return
      */
     public static Map<String, Object> cancelCase(long processInstanceId, ProcessAPI processAPI) {
-        Map<String, Object> caseOperation = new HashMap<String, Object>();
+        Map<String, Object> caseOperation = new HashMap<>();
         logger.info("Cancel ProcessInstance[" + processInstanceId + "]");
         List<BEvent> listEvents = new ArrayList<>();
         try {
