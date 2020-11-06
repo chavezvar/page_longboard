@@ -2,7 +2,7 @@
 	<modelVersion>4.0.0</modelVersion>
 	<groupId>org.bonitasoft.custompage</groupId>
 	<artifactId>bonita-longboard</artifactId>
-	<version>4.5.1</version>
+	<version>4.6.0</version>
 	<name>bonita-longboard</name>
 	<properties>
 		<!-- <ping.version>2.4.0</ping.version> -->

@@ -106,6 +106,7 @@ import org.bonitasoft.engine.search.Order;
 import org.bonitasoft.engine.search.SearchOptionsBuilder;
 import org.bonitasoft.engine.search.SearchResult;
 import org.bonitasoft.engine.session.APISession;
+import org.bonitasoft.log.event.BEvent;
 import org.json.simple.JSONValue;
 
 import com.bonitasoft.custompage.longboard.casehistory.CaseGraphDisplay.ActivityTimeLine;
@@ -664,7 +665,7 @@ public class CaseHistory {
 
             caseDetails.put("activities", sortTheList(listActivities, cstActivityDate ));
 
-            // -------------------------- Calcul the Active list
+            // -------------------------- Calculate the Active list
             Map<Long, Map<String, Object>> mapActive = new HashMap<Long, Map<String, Object>>();
             for (Map<String, Object> activity : listActivities) {
                 if (cstPerimeter_V_ARCHIVED.equals(activity.get(CSTJSON_PERIMETER)))
@@ -708,8 +709,37 @@ public class CaseHistory {
                     caseHistoryParameter.showSubProcess, processAPI);
 
             for (ProcessInstanceDescription processInstanceDescription : listProcessInstances) {
-                List<Document> listDocuments = processAPI.getLastVersionOfDocuments(processInstanceDescription.id, 0, 1000,
-                        DocumentCriterion.NAME_ASC);
+                List<Document> listDocuments = new ArrayList<>();
+                listDocuments.addAll( processAPI.getLastVersionOfDocuments(processInstanceDescription.id, 0, 1000, DocumentCriterion.NAME_ASC));
+                
+                
+                try {
+                    // but the archive is based on the sourceArchivedid and are not accessible ...
+                    Map<String, Serializable> map = processAPI.getArchivedProcessInstanceExecutionContext(processInstanceDescription.id);
+                    for (String key : map.keySet()) {
+                        if (map.get(key) instanceof Document) {
+                            // we got an archive Business Data Reference !
+                            listDocuments.add((Document) map.get(key));
+                        }
+                        if (map.get(key) instanceof List) {
+                            List listDoc = (List) map.get(key);
+                            for (Object subRef : listDoc) {
+                                if (subRef instanceof Document)
+                                    // we got an archive Business Data Reference !
+                                    listDocuments.add((Document) subRef);
+                            }
+                        }
+                    }
+                } catch (Exception e) {
+                    final StringWriter sw = new StringWriter();
+                    e.printStackTrace(new PrintWriter(sw));
+
+                    logger.severe("During getProcessInstance : " + e.toString() + " at " + sw.toString());
+                    caseDetails.put("errormessage", "Error during get case history " + e.toString());
+             
+                }
+                
+                
                 if (listDocuments != null) {
                     for (Document document : listDocuments) {
                         Map<String, Object> documentMap = new HashMap<String, Object>();
