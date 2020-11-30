@@ -290,7 +290,7 @@ public class CaseHistory {
         logger.info("############### start caseDetail v4.0 on [" + caseHistoryParameter.caseId + "] ShowSubProcess["
                 + caseHistoryParameter.showSubProcess + "]");
 
-        final Map<String, Object> caseDetails = new HashMap<String, Object>();
+        final Map<String, Object> caseDetails = new HashMap<>();
         caseDetails.put("errormessage", "");
         try {
 
@@ -714,8 +714,12 @@ public class CaseHistory {
                 
                 
                 try {
+                    Long sourceId = processInstanceDescription.id;
+                    if (!processInstanceDescription.isActive)
+                        sourceId = processInstanceDescription.archivedProcessInstanceId;
+                 
                     // but the archive is based on the sourceArchivedid and are not accessible ...
-                    Map<String, Serializable> map = processAPI.getArchivedProcessInstanceExecutionContext(processInstanceDescription.id);
+                    Map<String, Serializable> map = processAPI.getArchivedProcessInstanceExecutionContext(sourceId);
                     for (String key : map.keySet()) {
                         if (map.get(key) instanceof Document) {
                             // we got an archive Business Data Reference !
@@ -1720,12 +1724,13 @@ public class CaseHistory {
         public Date endDate;
         public long processDefinitionId;
         public boolean isActive;
+        public Long archivedProcessInstanceId = null;
 
     }
 
     private static List<ProcessInstanceDescription> getAllProcessInstance(long rootProcessInstance,
             boolean showSubProcess, ProcessAPI processAPI) {
-        List<ProcessInstanceDescription> listProcessInstances = new ArrayList<ProcessInstanceDescription>();
+        List<ProcessInstanceDescription> listProcessInstances = new ArrayList<>();
 
         Connection con = null;
         PreparedStatement pstmt = null;
@@ -1752,15 +1757,16 @@ public class CaseHistory {
             rs = null;
             pstmt.close();
             pstmt = null;
-            sqlRequest = "select SOURCEOBJECTID, PROCESSDEFINITIONID, CALLERID, STARTDATE, ENDDATE  from ARCH_PROCESS_INSTANCE where ROOTPROCESSINSTANCEID = ?";
+            sqlRequest = "select ID, SOURCEOBJECTID, PROCESSDEFINITIONID, CALLERID, STARTDATE, ENDDATE  from ARCH_PROCESS_INSTANCE where ROOTPROCESSINSTANCEID = ?";
             pstmt = con.prepareStatement(sqlRequest);
             pstmt.setLong(1, rootProcessInstance);
             rs = pstmt.executeQuery();
             while (rs.next()) {
                 ProcessInstanceDescription processInstanceDescription = new ProcessInstanceDescription();
-                processInstanceDescription.id = rs.getLong(1);
-                processInstanceDescription.processDefinitionId = rs.getLong(2);
-                processInstanceDescription.callerId = rs.getLong(3);
+                processInstanceDescription.archivedProcessInstanceId = rs.getLong(1);
+                processInstanceDescription.id = rs.getLong(2);
+                processInstanceDescription.processDefinitionId = rs.getLong(3);
+                processInstanceDescription.callerId = rs.getLong(4);
                 processInstanceDescription.isActive = false;
                 //maybe in double?
                 boolean alreadyExist = false;
