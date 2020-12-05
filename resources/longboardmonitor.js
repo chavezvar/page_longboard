@@ -6,11 +6,8 @@
 (function() {
 
 
-var appCommand = angular.module('longboardmonitor', ['googlechart', 'ui.bootstrap','ngSanitize']);
+var appCommand = angular.module('longboardmonitor', ['googlechart', 'ui.bootstrap','ngSanitize', 'ngCookies']);
 
-
-// appCommand.config();
-$('#waitanswer').hide();
 
 // Constant used to specify resource base path (facilitates integration into a Bonita custom page)
 appCommand.constant('RESOURCE_PATH', 'pageResource?page=custompage_longboard&location=');
@@ -26,17 +23,36 @@ appCommand.constant('RESOURCE_PATH', 'pageResource?page=custompage_longboard&loc
 	   
 // User app list controller
 appCommand.controller('DashboardMonitorController', 
-	function () {
+	function ( $cookies ) {
 	
 	this.messageList='';
 	
+	this.getHttpConfig = function () {
+		var additionalHeaders = {};
+		var csrfToken = $cookies.get('X-Bonita-API-Token');
+		if (csrfToken) {
+			additionalHeaders ['X-Bonita-API-Token'] = csrfToken;
+		}
+		var config= {"headers": additionalHeaders};
+		console.log("GetHttpConfig : "+angular.toJson( config));
+		return config;
+	}
 		
 	var myProcessList = [ {
 	   Name : 'processName',
 	   Version : '1.0',
 	   } ];
 	    
-	
+	this.getHttpConfig = function () {
+		var additionalHeaders = {};
+		var csrfToken = $cookies.get('X-Bonita-API-Token');
+		if (csrfToken) {
+			additionalHeaders ['X-Bonita-API-Token'] = csrfToken;
+		}
+		var config= {"headers": additionalHeaders};
+		console.log("GetHttpConfig : "+angular.toJson( config));
+		return config;
+	}
 	
 	this.listprocess = function()
 	{
@@ -73,7 +89,7 @@ appCommand.controller('MainController',
 // --------------------------------------------------------------------------
 	
 appCommand.controller('ShowHistoryController',
-	function ($scope, $http,$sce) {
+	function ($scope, $http,$sce, $cookies) {
 		this.msg="";
 		this.myActivityHistory = [];
 		this.synthesis = [];
@@ -81,6 +97,17 @@ appCommand.controller('ShowHistoryController',
 		
 		this.param = {'caseId':0, 'showSubProcess':true, 'showProcessData':true, 'showLocalData':true,'showBdmData':true,'showArchivedData':false};
 
+		this.getHttpConfig = function () {
+			var additionalHeaders = {};
+			var csrfToken = $cookies.get('X-Bonita-API-Token');
+			if (csrfToken) {
+				additionalHeaders ['X-Bonita-API-Token'] = csrfToken;
+			}
+			var config= {"headers": additionalHeaders};
+			console.log("GetHttpConfig : "+angular.toJson( config));
+			return config;
+		}
+		
 		// alert('init getActivity '+myActivityHistory+'');
 
 		this.historyinprogress=false;
@@ -98,7 +125,7 @@ appCommand.controller('ShowHistoryController',
 
 			var url='?page=custompage_longboard&action=casehistory&paramjson='+json+'&t='+Date.now();
 										
-			$http.get( url )
+			$http.get( url, this.getHttpConfig() )
 				.success( function ( jsonResult ) {								
 					console.log(" get history",jsonResult);
 					self.historyinprogress=false;
@@ -128,7 +155,7 @@ appCommand.controller('ShowHistoryController',
 
 			var url='?page=custompage_longboard&action=searchbyindex&paramjson='+json+'&t='+Date.now();
 										
-			$http.get( url )
+			$http.get( url, this.getHttpConfig() )
 				.success( function ( jsonResult ) {								
 								console.log(" get history",jsonResult);
 								self.searchindexresult 			= jsonResult.cases;
@@ -199,7 +226,7 @@ appCommand.controller('ShowHistoryController',
 			
 			var url='?page=custompage_longboard&action=cancelcase&caseid='+this.param.caseId+'&t='+Date.now();
 								
-			$http.get( url )
+			$http.get( url, this.getHttpConfig() )
 				.success( function ( jsonResult ) {
 					self.historyinprogress=false;
 					self.showcasehistory();
@@ -250,7 +277,7 @@ appCommand.controller('ShowHistoryController',
 			
 			var url='?page=custompage_longboard&action='+action+'&activityid='+activity.activityId+'&t='+Date.now();
 								
-			$http.get( url )
+			$http.get( url, this.getHttpConfig() )
 				.success( function ( jsonResult ) {
 					selfactivity.statusexecution=jsonResult.status;
 					selfactivity.listevents=jsonResult.listevents;
@@ -283,7 +310,7 @@ appCommand.controller('ShowHistoryController',
 
 			var url='?page=custompage_longboard&action=updatetimer&paramjson='+json+'&t='+Date.now();
 								
-			$http.get( url )
+			$http.get( url, this.getHttpConfig() )
 				.success( function ( jsonResult ) {
 					self.historyinprogress=false;
 					selfscheduletimer.statusexecution=jsonResult.statusexecution;
@@ -315,7 +342,7 @@ appCommand.controller('ShowHistoryController',
 
 			var url='?page=custompage_longboard&action=sendsignal&paramjson='+json+'&t='+Date.now();
 								
-			$http.get( url )
+			$http.get( url, this.getHttpConfig() )
 				.success( function ( jsonResult ) {
 					self.historyinprogress=false;					
 					selfsignal.statusexecution=jsonResult.statusexecution;	
@@ -344,7 +371,7 @@ appCommand.controller('ShowHistoryController',
 
 			var url='?page=custompage_longboard&action=sendmessage&paramjson='+json+'&t='+Date.now();
 								
-			$http.get( url )
+			$http.get( url, this.getHttpConfig() )
 				.success( function ( jsonResult ) {
 					self.historyinprogress=false;
 					selfmessage.statusexecution=jsonResult.statusexecution;
@@ -374,7 +401,7 @@ appCommand.controller('ShowHistoryController',
 // --------------------------------------------------------------------------
 
 appCommand.controller('MonitoringController', 
-	function ($scope,$http) {
+	function ($scope,$http, $cookies) {
 		this.AvailableProcessor=0;
 		this.JvmName="";
 		this.MemUsage=0;
@@ -407,6 +434,18 @@ appCommand.controller('MonitoringController',
 		this.JVMArgs = "";
 		this.inprogress=false;
 		
+		this.getHttpConfig = function () {
+			var additionalHeaders = {};
+			var csrfToken = $cookies.get('X-Bonita-API-Token');
+			if (csrfToken) {
+				additionalHeaders ['X-Bonita-API-Token'] = csrfToken;
+			}
+			var config= {"headers": additionalHeaders};
+			console.log("GetHttpConfig : "+angular.toJson( config));
+			return config;
+		}
+		
+		
 		this.isSowJvmArgs=false;
 		this.showJvmArgs = function( show ) 
 		{
@@ -427,7 +466,7 @@ appCommand.controller('MonitoringController',
 			var self = this;
 			self.inprogress=true;
 				
-			$http.get( '?page=custompage_longboard&action=monitoringapi&t='+Date.now())
+			$http.get( '?page=custompage_longboard&action=monitoringapi&t='+Date.now(), this.getHttpConfig())
 			 .success(function success(jsonResult) {	
 
 								console.log('receive ',jsonResult);
@@ -486,7 +525,7 @@ appCommand.controller('MonitoringController',
 // --------------------------------------------------------------------------
 			
 appCommand.controller('PerformanceController', 
-	function ($scope,$http) {
+	function ($scope,$http, $cookies) {
 		
 		$scope.BBonitaHomeWriteBASE=0;
 		this.runprocesstest = false;
@@ -511,6 +550,16 @@ appCommand.controller('PerformanceController',
 		this.runprocesstestnumber=100;
 		this.inprogress=false;
 		
+		this.getHttpConfig = function () {
+			var additionalHeaders = {};
+			var csrfToken = $cookies.get('X-Bonita-API-Token');
+			if (csrfToken) {
+				additionalHeaders ['X-Bonita-API-Token'] = csrfToken;
+			}
+			var config= {"headers": additionalHeaders};
+			console.log("GetHttpConfig : "+angular.toJson( config));
+			return config;
+		}
 		this.runtest = function()
 		{		    
 			var self = this;
@@ -522,7 +571,7 @@ appCommand.controller('PerformanceController',
 			url = url + '&runprocesstest='+this.runprocesstest;
 			url = url + '&runprocesstestnumber='+this.runprocesstestnumber;
 		
-			$http.get( url )
+			$http.get( url, this.getHttpConfig() )
 			  .success(function success(jsonResult) {	
 				console.log('receive ',jsonResult);
 								
@@ -579,7 +628,7 @@ appCommand.controller('PerformanceController',
 // --------------------------------------------------------------------------
 			
 appCommand.controller('TimeTrackerController', 
-	function ($scope,$http) {
+	function ($scope,$http, $cookies) {
 		this.startedstate=false;
 		this.info="";
 		this.msg="";
@@ -598,7 +647,17 @@ appCommand.controller('TimeTrackerController',
 		this.inprogress=false;
 		this.isinitstate=false;
 		
-					
+		this.getHttpConfig = function () {
+			var additionalHeaders = {};
+			var csrfToken = $cookies.get('X-Bonita-API-Token');
+			if (csrfToken) {
+				additionalHeaders ['X-Bonita-API-Token'] = csrfToken;
+			}
+			var config= {"headers": additionalHeaders};
+			console.log("GetHttpConfig : "+angular.toJson( config));
+			return config;
+		}
+		
 		this.isinit = function() 
 		{ return this.isinitstate; }
 		
@@ -614,7 +673,7 @@ appCommand.controller('TimeTrackerController',
 			// alert('runService '+start);
 			var self = this;
 			self.inprogress=true;
-			$http.get( '?page=custompage_longboard&action=timetrackerservice&start='+start+'&t='+Date.now())
+			$http.get( '?page=custompage_longboard&action=timetrackerservice&start='+start+'&t='+Date.now(), this.getHttpConfig())
 			  .success(function success(jsonResult) {	
 				console.log('receive ',jsonResult);
 				self.inprogress=false;
@@ -635,7 +694,7 @@ appCommand.controller('TimeTrackerController',
 
 			var self = this;
 			self.inprogress=true;
-			$http.get( '?page=custompage_longboard&action=timetrackergetinfos&issimulation='+self.issimulation+'&showallinformations='+this.showallinformations+'&rangedisplayinhour='+this.rangedisplayinhour+"&rangedisplayDuration="+this.showrangeDuration+"&rangedisplayMaximum="+this.showrangeMaximum+'&t='+Date.now())
+			$http.get( '?page=custompage_longboard&action=timetrackergetinfos&issimulation='+self.issimulation+'&showallinformations='+this.showallinformations+'&rangedisplayinhour='+this.rangedisplayinhour+"&rangedisplayDuration="+this.showrangeDuration+"&rangedisplayMaximum="+this.showrangeMaximum+'&t='+Date.now(), this.getHttpConfig())
 			  .success(function success(jsonResult) {	
 				self.inprogress=false;
 				self.isinitstate=true; // consider now we have the status
@@ -668,7 +727,7 @@ appCommand.controller('TimeTrackerController',
 			var self = this;
 			self.inprogress=true;
 			
-			$http.get( '?page=custompage_longboard&action=timetrackerservicestate')
+			$http.get( '?page=custompage_longboard&action=timetrackerservicestate', this.getHttpConfig())
 			  .success(function success(jsonResult) {	
 
 				console.log('receive ',jsonResult);
@@ -706,19 +765,29 @@ appCommand.controller('TimeTrackerController',
 // --------------------------------------------------------------------------
 			
 appCommand.controller('ServerParamController', 
-	function ($scope,$http) {
+	function ($scope,$http, $cookies) {
 		this.CustompageDebug=false;
 		this.PersistencehibernateEnableWordSearch='';
 		this.inprogress=false;
 
-	
+		this.getHttpConfig = function () {
+			var additionalHeaders = {};
+			var csrfToken = $cookies.get('X-Bonita-API-Token');
+			if (csrfToken) {
+				additionalHeaders ['X-Bonita-API-Token'] = csrfToken;
+			}
+			var config= {"headers": additionalHeaders};
+			console.log("GetHttpConfig : "+angular.toJson( config));
+			return config;
+		}
+		
 		this.refresh = function()
 		{	
 			this.inprogress=true;
 
 			var self = this;
 			self.inprogress=true;
-			$http.get( '?page=custompage_longboard&action=serverparams&t='+Date.now())
+			$http.get( '?page=custompage_longboard&action=serverparams&t='+Date.now(), this.getHttpConfig())
 			  .success(function success(jsonResult) {	
 				console.log('receive ',jsonResult);
 				self.CustompageDebug 						= jsonResult.CustompageDebug;
@@ -746,7 +815,7 @@ appCommand.controller('ServerParamController',
 // --------------------------------------------------------------------------
 			
 appCommand.controller('MonitorProcessController', 
-	function ($scope,$http) {
+	function ($scope,$http, $cookies) {
 		this.alldetails=true;
 		this.processes = [ ];
 		this.isshowlegend=false;
@@ -756,6 +825,17 @@ appCommand.controller('MonitorProcessController',
 		this.activityPeriodInMn=120;
 		this.defaultmaxitems=1000;
 		this.inprogress = false;
+		
+		this.getHttpConfig = function () {
+			var additionalHeaders = {};
+			var csrfToken = $cookies.get('X-Bonita-API-Token');
+			if (csrfToken) {
+				additionalHeaders ['X-Bonita-API-Token'] = csrfToken;
+			}
+			var config= {"headers": additionalHeaders};
+			console.log("GetHttpConfig : "+angular.toJson( config));
+			return config;
+		} 
 		
 		this.showlegend = function( show )
 		{
@@ -779,7 +859,7 @@ appCommand.controller('MonitorProcessController',
 			var self = this;
 			self.inprogress = true;
 			
-			$http.get( '?page=custompage_longboard&action=monitoringprocess&paramjson='+ angular.toJson(postMsg, true)+'&t='+Date.now())
+			$http.get( '?page=custompage_longboard&action=monitoringprocess&paramjson='+ angular.toJson(postMsg, true)+'&t='+Date.now(), this.getHttpConfig())
 			  .success(function success(jsonResult) {	
 				console.log('receive ',jsonResult);
 				self.processes 						= jsonResult.processes;

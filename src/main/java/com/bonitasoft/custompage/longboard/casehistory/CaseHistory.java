@@ -737,9 +737,9 @@ public class CaseHistory {
                 } catch (Exception e) {
                     final StringWriter sw = new StringWriter();
                     e.printStackTrace(new PrintWriter(sw));
-
-                    logger.severe("During getProcessInstance : " + e.toString() + " at " + sw.toString());
-                    caseDetails.put("errormessage", "Error during get case history " + e.toString());
+                    // on an active case, we may received this exception
+                    logger.info("During getProcessInstance : " + e.toString() + " at " + sw.toString());
+                    // caseDetails.put("errormessage", "Error during get case history " + e.toString());
              
                 }
                 
